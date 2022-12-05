@@ -1,3 +1,10 @@
 body {
     font-family: sans-serif;
+    margin: 0;
+    overflow: hidden;
+}
+
+canvas {
+    width: 100vw;
+    height: 100vh;
 }
