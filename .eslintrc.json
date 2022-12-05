@@ -65,6 +65,16 @@
             "@typescript-eslint/explicit-member-accessibility": "warn",
             // split type and interface members using semicolons (usual for ts)
             "@typescript-eslint/member-delimiter-style": "warn",
+            // allow non null assertion
+            "@typescript-eslint/no-non-null-assertion": "off",
+            // does not work well with gl-matrix
+            "@typescript-eslint/no-unsafe-assignment": "off",
+            // does not work well with gl-matrix
+            "@typescript-eslint/no-unsafe-call": "off",
+            // does not work well with gl-matrix
+            "@typescript-eslint/no-unsafe-member-access": "off",
+            // does not work well with shader requires
+            "@typescript-eslint/no-var-requires": "off",
             // if a function returns a promise, it should be marked async
             "@typescript-eslint/promise-function-async": "warn",
             // make sure switch statements cover all cases

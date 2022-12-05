@@ -42,6 +42,12 @@ export default function () {
                     test: /\.ts$/,
                     use: { loader: 'ts-loader' },
                 },
+                {
+                    test: /\.(glsl|vert|frag)$/,
+                    use: {
+                        loader: 'webpack-glsl-loader'
+                    },
+                },
             ]
         },
         devServer: { hot: false },
