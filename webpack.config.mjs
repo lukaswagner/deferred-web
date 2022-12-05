@@ -1,8 +1,8 @@
 'use strict';
 
 import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import PugPlugin from 'pug-plugin';
+import { fileURLToPath } from 'node:url';
 
 const baseDir = dirname(fileURLToPath(import.meta.url));
 const srcDir = resolve(baseDir, 'src');
@@ -11,7 +11,7 @@ const buildDir = resolve(baseDir, 'build');
 /**
  * @returns {import("webpack").Configuration}
  */
-export default function (env, argv) {
+export default function () {
     return {
         context: srcDir,
         entry: {
@@ -22,7 +22,7 @@ export default function (env, argv) {
             path: buildDir,
         },
         plugins: [
-            new PugPlugin()
+            new PugPlugin(),
         ],
         resolve: { extensions: ['.ts', '...'] },
         module: {

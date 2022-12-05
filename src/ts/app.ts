@@ -5,7 +5,7 @@ export class App extends Initializable {
     protected _canvas: Canvas;
     protected _renderer: Renderer;
 
-    initialize(canvas: HTMLCanvasElement): boolean {
+    public initialize(canvas: HTMLCanvasElement): boolean {
         this._canvas = new Canvas(canvas, { antialias: false, alpha: false });
         if (!this._canvas.context.isWebGL2) alert('WebGL 2 not supported!');
 
@@ -19,6 +19,6 @@ export class App extends Initializable {
         return true;
     }
 
-    uninitialize(): void {
+    public uninitialize(): void {
     }
 }

@@ -2,9 +2,10 @@ import { Context, EventProvider, Invalidate, Renderer } from 'webgl-operate';
 
 export class DeferredRenderer extends Renderer {
     protected onInitialize(
-        context: Context, callback: Invalidate, eventProvider: EventProvider
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        context: Context, callback: Invalidate, eventProvider: EventProvider,
     ): boolean {
-        return true
+        return true;
     }
 
     protected onUninitialize(): void {
@@ -20,6 +21,6 @@ export class DeferredRenderer extends Renderer {
     protected onPrepare(): void {
     }
 
-    protected onFrame(frameNumber: number): void {
+    protected onFrame(): void {
     }
 }

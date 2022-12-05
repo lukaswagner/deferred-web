@@ -1,0 +1,121 @@
+{
+    "extends": [
+        "eslint:recommended"
+    ],
+    "parserOptions": {"sourceType": "module", "ecmaVersion": "latest"},
+    "root": true,
+    "rules": {
+        // base eslint rules
+        // https://eslint.org/docs/latest/rules/
+
+        // require arrow functions in array.map etc to return a value
+        "array-callback-return": "warn",
+        // all imports from a module should be grouped
+        "no-duplicate-imports": "warn",
+        // don't return from promise func (is ignored, should call resolve)
+        "no-promise-executor-return": "warn",
+        // avoid accidentally using '' quotes instead of `` with ${}
+        "no-template-curly-in-string": "warn",
+        // return call should always or never be given a value (don't mix)
+        "consistent-return": "warn",
+        // always include a default case in switch
+        "default-case": "warn",
+        // put default switch case last to avoid confusion
+        "default-case-last": "warn",
+        // use === over ==
+        "eqeqeq": "error",
+        // require const or let instead of var
+        "no-var": "error",
+        // define each var individually
+        "one-var": ["error", "never"],
+        // use const over let if not redefined
+        "prefer-const": "warn",
+        // don't write async functions without await
+        "require-await": "warn",
+        // automatically sort imports
+        "sort-imports": "warn",
+        // requrie space after // or /*
+        "spaced-comment": "warn",
+        // require parenthesis around arrow func params
+        "arrow-parens": "warn",
+        // require spaces around arrow func arrow
+        "arrow-spacing": "warn",
+        // enforce max line length
+        "max-len": ["warn", { "code": 100, "ignoreTemplateLiterals": true }],
+        // always include parenthesis when calling constructor
+        "new-parens": "warn"
+    },
+    "overrides": [{
+        "files": ["**/*.ts"],
+        "extends": [
+            "plugin:@typescript-eslint/recommended",
+            "plugin:@typescript-eslint/recommended-requiring-type-checking",
+            "plugin:@typescript-eslint/strict"
+        ],
+        "parser": "@typescript-eslint/parser",
+        "parserOptions": {
+            "project": ["./tsconfig.json"]
+        },
+        "plugins": ["@typescript-eslint"],
+        "rules": {
+            // ts eslint rules
+            // https://typescript-eslint.io/rules/#supported-rules
+
+            // require class members to be explicitly marked as public
+            "@typescript-eslint/explicit-member-accessibility": "warn",
+            // split type and interface members using semicolons (usual for ts)
+            "@typescript-eslint/member-delimiter-style": "warn",
+            // if a function returns a promise, it should be marked async
+            "@typescript-eslint/promise-function-async": "warn",
+            // make sure switch statements cover all cases
+            "@typescript-eslint/switch-exhaustiveness-check": "warn",
+            // correctly format type annotations
+            "@typescript-eslint/type-annotation-spacing": "warn",
+
+            // ts eslint rules colliding with eslint rules
+            // https://typescript-eslint.io/rules/#extension-rules
+
+            // use default js brace style
+            "brace-style": "off",
+            "@typescript-eslint/brace-style": "warn",
+            // enforce comma only for multiline lists to allow easy moving of lines
+            "comma-dangle": "off",
+            "@typescript-eslint/comma-dangle": ["warn", "always-multiline"],
+            // space only after comma
+            "comma-spacing": "off",
+            "@typescript-eslint/comma-spacing": "warn",
+            // no space before function call parenthesis
+            "func-call-spacing": "off",
+            "@typescript-eslint/func-call-spacing": "warn",
+            // indentation with 4 spaces
+            "indent": "off",
+            "@typescript-eslint/indent": "warn",
+            // require spaces around keywords (if, for, ...)
+            "keyword-spacing": "off",
+            "@typescript-eslint/keyword-spacing": "warn",
+            // allow empty functions
+            "@typescript-eslint/no-empty-function": "off",
+            // no this outside classes
+            "no-invalid-this": "off",
+            "@typescript-eslint/no-invalid-this": "warn",
+            // require spaces in { braces }
+            "object-curly-spacing": "off",
+            "@typescript-eslint/object-curly-spacing": ["warn", "always"],
+            // use single quotes for strings
+            "quotes": "off",
+            "@typescript-eslint/quotes": ["warn", "single"],
+            // require semicolons
+            "semi": "off",
+            "@typescript-eslint/semi": "warn",
+            // require space before { block }
+            "space-before-blocks": "off",
+            "@typescript-eslint/space-before-blocks": "warn",
+            // no space before function definition parenthesis
+            "space-before-function-paren": "off",
+            "@typescript-eslint/space-before-function-paren": ["warn", "never"],
+            // force spaces around operators
+            "space-infix-ops": "off",
+            "@typescript-eslint/space-infix-ops": "warn"
+        }
+    }]
+}
