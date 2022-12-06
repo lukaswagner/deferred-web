@@ -1,5 +1,6 @@
 import {
     Camera,
+    ChangeLookup,
     Context,
     DefaultFramebuffer,
     EventProvider,
@@ -16,6 +17,12 @@ import { createTriangle } from './geometry/triangle';
 import { drawBuffer } from './util/drawBuffer';
 
 export class DeferredRenderer extends Renderer {
+    protected readonly _additionalAltered = Object.assign(new ChangeLookup(), {
+        any: false,
+        output: false,
+    });
+
+
     protected _gl: WebGL2RenderingContext;
 
     protected _iFBO: IntermediateFramebuffer;
@@ -27,6 +34,8 @@ export class DeferredRenderer extends Renderer {
     protected _navigation: Navigation;
 
     protected _geometries: Geometry[];
+
+    protected _output: FragmentLocation;
 
     protected onInitialize(
         context: Context, invalidate: Invalidate, eventProvider: EventProvider,
@@ -71,6 +80,7 @@ export class DeferredRenderer extends Renderer {
 
     protected onUpdate(): boolean {
         return this._altered.any ||
+            this._additionalAltered.any ||
             this._camera.altered ||
             this._geometryPass.altered;
     }
@@ -100,12 +110,17 @@ export class DeferredRenderer extends Renderer {
     protected onSwap(): void {
         this._gl.bindFramebuffer(this._gl.READ_FRAMEBUFFER, this._iFBO.fbo.object);
         this._gl.bindFramebuffer(this._gl.DRAW_FRAMEBUFFER, null);
-        this._gl.readBuffer(this._gl.COLOR_ATTACHMENT0 + FragmentLocation.Color);
+        this._gl.readBuffer(this._gl.COLOR_ATTACHMENT0 + this._output);
         drawBuffer(this._gl, this._gl.BACK);
         this._gl.blitFramebuffer(
             0, 0, this._frameSize[0], this._frameSize[1],
             0, 0, this._frameSize[0], this._frameSize[1],
             this._gl.COLOR_BUFFER_BIT, this._gl.NEAREST);
         this._gl.bindFramebuffer(this._gl.READ_FRAMEBUFFER, null);
+    }
+
+    public set output(value: FragmentLocation) {
+        this._output = value;
+        this._additionalAltered.alter('output');
     }
 }

@@ -1,0 +1,25 @@
+#ui {
+    position: absolute;
+    top: var(--space);
+    right: var(--space);
+    background: white;
+    padding: var(--small-space);
+    width: var(--ui-width);
+}
+
+#ui div {
+    display: flex;
+    align-items: center;
+    height: 1.5em;
+}
+
+#ui label {
+    margin-right: auto;
+}
+
+#ui select {
+    box-sizing: border-box;
+    width: var(--ui-input-width);
+    height: 1.8em;
+    margin-left: var(--small-space);
+}
