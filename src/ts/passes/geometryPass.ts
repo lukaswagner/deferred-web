@@ -1,12 +1,29 @@
-import { Context, Framebuffer, Initializable, Shader } from 'webgl-operate';
-import { FragmentLocation } from '../storage/locations';
+import {
+    ChangeLookup,
+    Context,
+    Framebuffer,
+    Initializable,
+    Program,
+    Shader,
+    mat4,
+} from 'webgl-operate';
+import { FragmentLocation } from '../buffers/locations';
 import { Geometry } from '../geometry/geometry';
+import { Uniform } from './uniform';
 
 export class GeometryPass extends Initializable {
+    protected readonly _altered = Object.assign(new ChangeLookup(), {
+        any: false,
+        viewProjection: false,
+    });
+
     protected _context: Context;
     protected _gl: WebGL2RenderingContext;
+    protected _program: Program;
 
     protected _target: Framebuffer;
+
+    protected _viewProjection: Uniform<mat4>;
 
     public constructor(context: Context) {
         super();
@@ -28,13 +45,33 @@ export class GeometryPass extends Initializable {
         frag.compile();
         valid &&= frag.compiled;
 
+        this._program = new Program(this._context);
+        valid &&= this._program.initialize([vert, frag], false);
+        valid &&= this._program.link();
+
+        this._viewProjection = {
+            value: mat4.create(),
+            location: this._program.uniform('u_viewProjection'),
+        };
+
         return valid;
     }
 
     public uninitialize(): void { }
 
+    public prepare(): void {
+        this._program.bind();
+
+        if (this._altered.viewProjection)
+            this._gl.uniformMatrix4fv(
+                this._viewProjection.location, false, this._viewProjection.value);
+
+        this._program.unbind();
+    }
+
     public draw(geometry: Geometry): void {
         this._target.bind();
+        this._program.bind();
 
         const indexed = geometry.base.index !== undefined;
         const instanced = geometry.vao !== undefined;
@@ -48,26 +85,54 @@ export class GeometryPass extends Initializable {
             // bind base buffers individually
             geometry.base.buffers.forEach((b) => {
                 b.buffer.attribEnable(b.location, b.size, b.type);
-                b.buffer.attribEnable(b.location, b.size, b.type);
             });
         }
 
         if (indexed) {
             if (instanced) {
-                // this._gl.drawArraysInstanced();
+                console.log('drawElementsInstanced');
+                // this._gl.drawElementsInstanced();
             } else {
-                // this._gl.drawArrays();
+                console.log('drawElements');
+                // this._gl.drawElements();
             }
         } else {
             if (instanced) {
-                // this._gl.drawElementsInstanced();
+                console.log('drawArraysInstanced');
+                // this._gl.drawArraysInstanced();
             } else {
-                // this._gl.drawElements();
+                console.log('drawArrays');
+                this._gl.drawArrays(geometry.base.mode, 0, geometry.base.count);
             }
         }
+
+        if (instanced) {
+            this._gl.bindVertexArray(null);
+        } else {
+            // bind base buffers individually
+            geometry.base.buffers.forEach((b) => {
+                b.buffer.attribDisable(b.location);
+            });
+        }
+
+        this._program.unbind();
+        this._target.unbind();
     }
 
     public set target(target: Framebuffer) {
         this._target = target;
+    }
+
+    public set viewProjection(value: mat4) {
+        this._viewProjection.value = value;
+        this._altered.alter('viewProjection');
+    }
+
+    public get altered(): boolean {
+        return this._altered.any;
+    }
+
+    public set altered(altered: boolean) {
+        this._altered.any = altered;
     }
 }

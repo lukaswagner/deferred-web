@@ -46,7 +46,7 @@ const normalData = new Float32Array([
     ...nr, ...nu, ...nf,
 ]);
 
-export function createCubeBase(context: Context): Base {
+export function createCube(context: Context): Base {
     const gl = context.gl as WebGL2RenderingContext;
 
     const index = new Buffer(context);
@@ -78,5 +78,6 @@ export function createCubeBase(context: Context): Base {
             divisor: 0,
         }],
         mode: gl.TRIANGLES,
+        count: 6,
     };
 }

@@ -10,7 +10,7 @@ export class IntermediateFramebuffer extends Initializable {
     public worldNormal: Texture2D;
     public color: Texture2D;
 
-    protected _fbo: Framebuffer;
+    public fbo: Framebuffer;
 
     public constructor(context: Context) {
         super();
@@ -37,21 +37,20 @@ export class IntermediateFramebuffer extends Initializable {
         valid &&= this.color.initialize(
             1, 1, this._gl.RGBA, this._gl.RGBA, this._gl.UNSIGNED_BYTE);
 
-        this._fbo = new Framebuffer(this._context, 'fbo:intermediate');
-        valid &&= this._fbo.initialize([
+        this.fbo = new Framebuffer(this._context, 'fbo:intermediate');
+        valid &&= this.fbo.initialize([
             [this._gl.COLOR_ATTACHMENT0 + FragmentLocation.WorldPosition, this.worldPosition],
             [this._gl.COLOR_ATTACHMENT0 + FragmentLocation.WorldNormal, this.worldNormal],
             [this._gl.COLOR_ATTACHMENT0 + FragmentLocation.Color, this.color],
             [this._gl.DEPTH_STENCIL_ATTACHMENT, this.depthStencil],
         ]);
 
-        console.log('done');
         return valid;
     }
 
     public uninitialize(): void { }
 
     public resize(width: number, height: number) {
-        this._fbo.resize(width, height);
+        this.fbo.resize(width, height);
     }
 }

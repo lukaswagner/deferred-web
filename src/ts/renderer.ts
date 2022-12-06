@@ -8,8 +8,12 @@ import {
     Renderer,
     vec3,
 } from 'webgl-operate';
+import { FragmentLocation } from './buffers/locations';
+import { Geometry } from './geometry/geometry';
 import { GeometryPass } from './passes/geometryPass';
-import { IntermediateFramebuffer } from './storage/intermediateFramebuffer';
+import { IntermediateFramebuffer } from './buffers/intermediateFramebuffer';
+import { createTriangle } from './geometry/triangle';
+import { drawBuffer } from './util/drawBuffer';
 
 export class DeferredRenderer extends Renderer {
     protected _gl: WebGL2RenderingContext;
@@ -21,6 +25,8 @@ export class DeferredRenderer extends Renderer {
 
     protected _camera: Camera;
     protected _navigation: Navigation;
+
+    protected _geometries: Geometry[];
 
     protected onInitialize(
         context: Context, invalidate: Invalidate, eventProvider: EventProvider,
@@ -37,6 +43,7 @@ export class DeferredRenderer extends Renderer {
 
         this._geometryPass = new GeometryPass(context);
         valid &&= this._geometryPass.initialize();
+        this._geometryPass.target = this._iFBO.fbo;
 
         this._camera = new Camera();
         this._camera.center = vec3.fromValues(0, 0, 0);
@@ -50,6 +57,9 @@ export class DeferredRenderer extends Renderer {
         // // @ts-expect-error: webgl-operate mouse wheel zoom is broken
         // this._navigation._wheelZoom = { process: () => { } };
 
+        this._geometries = [];
+        this._geometries.push({ base: createTriangle(context) });
+
         return valid;
     }
 
@@ -60,15 +70,42 @@ export class DeferredRenderer extends Renderer {
     }
 
     protected onUpdate(): boolean {
-        return this._altered.any;
+        return this._altered.any ||
+            this._camera.altered ||
+            this._geometryPass.altered;
     }
 
     protected onPrepare(): void {
         if (this._altered.frameSize) {
             this._iFBO.resize(...this._frameSize);
+            this._camera.viewport = [this._frameSize[0], this._frameSize[1]];
         }
+
+        if (this._altered.canvasSize)
+            this._camera.aspect = this._canvasSize[0] / this._canvasSize[1];
+
+        if (this._geometryPass.altered)
+            this._geometryPass.prepare();
+
+        this._altered.reset();
+        this._camera.altered = false;
+        this._geometryPass.altered = false;
     }
 
     protected onFrame(): void {
+        this._geometries.forEach((g) =>
+            this._geometryPass.draw(g));
+    }
+
+    protected onSwap(): void {
+        this._gl.bindFramebuffer(this._gl.READ_FRAMEBUFFER, this._iFBO.fbo.object);
+        this._gl.bindFramebuffer(this._gl.DRAW_FRAMEBUFFER, null);
+        this._gl.readBuffer(this._gl.COLOR_ATTACHMENT0 + FragmentLocation.Color);
+        drawBuffer(this._gl, this._gl.BACK);
+        this._gl.blitFramebuffer(
+            0, 0, this._frameSize[0], this._frameSize[1],
+            0, 0, this._frameSize[0], this._frameSize[1],
+            this._gl.COLOR_BUFFER_BIT, this._gl.NEAREST);
+        this._gl.bindFramebuffer(this._gl.READ_FRAMEBUFFER, null);
     }
 }

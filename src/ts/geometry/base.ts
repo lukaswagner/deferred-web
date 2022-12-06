@@ -6,4 +6,5 @@ export interface Base {
     indexType?: number;
     buffers: BufferInfo[];
     mode: number;
+    count: number;
 }
