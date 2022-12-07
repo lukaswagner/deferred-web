@@ -20,7 +20,9 @@ export class GeometryPass extends Initializable {
     protected _gl: WebGL2RenderingContext;
     protected _program: Program;
 
+    protected _model: Uniform<mat4>;
     protected _viewProjection: Uniform<mat4>;
+    protected _instanced: Uniform<boolean>;
 
     public constructor(context: Context) {
         super();
@@ -48,10 +50,27 @@ export class GeometryPass extends Initializable {
         valid &&= this._program.initialize([vert, frag], false);
         valid &&= this._program.link();
 
+        this._program.bind();
+
+        this._model = {
+            value: mat4.create(),
+            location: this._program.uniform('u_model'),
+        };
+        this._gl.uniformMatrix4fv(this._model.location, false, this._model.value);
+
         this._viewProjection = {
             value: mat4.create(),
             location: this._program.uniform('u_viewProjection'),
         };
+        this._gl.uniformMatrix4fv(this._viewProjection.location, false, this._viewProjection.value);
+
+        this._instanced = {
+            value: false,
+            location: this._program.uniform('u_instanced'),
+        };
+        this._gl.uniform1i(this._instanced.location, +this._instanced.value);
+
+        this._program.unbind();
 
         return valid;
     }
@@ -73,6 +92,18 @@ export class GeometryPass extends Initializable {
 
         const indexed = geometry.base.index !== undefined;
         const instanced = geometry.vao !== undefined;
+
+        if (instanced !== this._instanced.value) {
+            this._instanced.value = instanced;
+            this._gl.uniform1i(this._instanced.location, +this._instanced.value);
+        }
+
+        const model = geometry.model ?? mat4.create();
+
+        if (!mat4.equals(model, this._model.value)) {
+            this._model.value = model;
+            this._gl.uniformMatrix4fv(this._model.location, false, this._model.value);
+        }
 
         if (indexed) geometry.base.index!.bind();
 

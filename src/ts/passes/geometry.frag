@@ -6,15 +6,17 @@ layout(location = VIEW_POSITION_LOCATION) out vec4 f_viewPosition;
 layout(location = VIEW_NORMAL_LOCATION) out vec4 f_viewNormal;
 layout(location = COLOR_LOCATION) out vec4 f_color;
 
-in vec3 v_position;
-in vec3 v_normal;
+in vec4 v_worldPosition;
+in vec4 v_worldNormal;
+in vec4 v_viewPosition;
+in vec4 v_viewNormal;
 in vec3 v_color;
 
 void main(void)
 {
-    f_worldPosition = vec4(v_position, 1.0);
-    f_worldNormal = vec4(v_normal, 1.0);
-    f_viewPosition = vec4(v_position, 1.0);
-    f_viewNormal = vec4(v_normal, 1.0);
+    f_worldPosition = v_worldPosition;
+    f_worldNormal = v_worldNormal;
+    f_viewPosition = v_viewPosition;
+    f_viewNormal = v_viewNormal;
     f_color = vec4(v_color, 1.0);
 }

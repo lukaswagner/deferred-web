@@ -7,6 +7,7 @@ import {
     Invalidate,
     Navigation,
     Renderer,
+    mat4,
     vec3,
 } from 'webgl-operate';
 import { drawBuffer, drawBuffers } from './util/drawBuffer';
@@ -57,6 +58,7 @@ export class DeferredRenderer extends Renderer {
         this._camera.center = vec3.fromValues(0, 0, 0);
         this._camera.up = vec3.fromValues(0, 1, 0);
         this._camera.eye = vec3.fromValues(0, 0, 5);
+        this._camera.fovy = 65;
         this._camera.near = 0.125;
         this._camera.far = 32.0;
 
@@ -66,7 +68,18 @@ export class DeferredRenderer extends Renderer {
         // this._navigation._wheelZoom = { process: () => { } };
 
         this._geometries = [];
-        this._geometries.push({ base: createTriangle(context) });
+
+        const leftTriangle: Geometry = {
+            base: createTriangle(context),
+            model: mat4.fromTranslation(mat4.create(), [-2, 0, 0]),
+        };
+        this._geometries.push(leftTriangle);
+
+        const rightTriangle: Geometry = {
+            base: createTriangle(context),
+            model: mat4.fromTranslation(mat4.create(), [2, 0, 0]),
+        };
+        this._geometries.push(rightTriangle);
 
         return valid;
     }

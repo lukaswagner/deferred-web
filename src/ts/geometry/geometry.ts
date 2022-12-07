@@ -1,11 +1,12 @@
+import { Context, mat4 } from 'webgl-operate';
 import { Base } from './base';
-import { Context } from 'webgl-operate';
 import { Instance } from './instance';
 
 export interface Geometry {
     base: Base;
     instance?: Instance;
     vao?: WebGLVertexArrayObject;
+    model?: mat4;
 }
 
 export function createVAO(
