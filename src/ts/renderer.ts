@@ -52,7 +52,6 @@ export class DeferredRenderer extends Renderer {
 
         this._geometryPass = new GeometryPass(context);
         valid &&= this._geometryPass.initialize();
-        this._geometryPass.target = this._iFBO.fbo;
 
         this._camera = new Camera();
         this._camera.center = vec3.fromValues(0, 0, 0);
@@ -109,11 +108,19 @@ export class DeferredRenderer extends Renderer {
 
     protected onFrame(): void {
         this._gl.viewport(0, 0, this._frameSize[0], this._frameSize[1]);
-        drawBuffers(this._gl, 0b111);
-        this._iFBO.fbo.clear(
-            this._gl.COLOR_BUFFER_BIT | this._gl.DEPTH_BUFFER_BIT | this._gl.STENCIL_BUFFER_BIT);
+
+        this._iFBO.fbo.bind();
+        drawBuffers(this._gl, 0b11111);
+
+        const black = [0, 0, 0, 0];
+        for (let i = 0; i < this._iFBO.fbo.drawBuffers.length; i++)
+            this._gl.clearBufferfv(this._gl.COLOR, i, black);
+        this._gl.clearBufferfi(this._gl.DEPTH_STENCIL, 0, 1, 0);
+
         this._geometries.forEach((g) =>
             this._geometryPass.draw(g));
+
+        this._iFBO.fbo.unbind();
     }
 
     protected onSwap(): void {

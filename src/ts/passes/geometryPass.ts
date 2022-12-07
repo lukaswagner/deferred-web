@@ -1,7 +1,6 @@
 import {
     ChangeLookup,
     Context,
-    Framebuffer,
     Initializable,
     Program,
     Shader,
@@ -21,8 +20,6 @@ export class GeometryPass extends Initializable {
     protected _gl: WebGL2RenderingContext;
     protected _program: Program;
 
-    protected _target: Framebuffer;
-
     protected _viewProjection: Uniform<mat4>;
 
     public constructor(context: Context) {
@@ -41,6 +38,8 @@ export class GeometryPass extends Initializable {
         valid &&= frag.initialize(require('./geometry.frag'), false);
         frag.replace('WORLD_POSITION_LOCATION', FragmentLocation.WorldPosition.toString());
         frag.replace('WORLD_NORMAL_LOCATION', FragmentLocation.WorldNormal.toString());
+        frag.replace('VIEW_POSITION_LOCATION', FragmentLocation.ViewPosition.toString());
+        frag.replace('VIEW_NORMAL_LOCATION', FragmentLocation.ViewNormal.toString());
         frag.replace('COLOR_LOCATION', FragmentLocation.Color.toString());
         frag.compile();
         valid &&= frag.compiled;
@@ -70,7 +69,6 @@ export class GeometryPass extends Initializable {
     }
 
     public draw(geometry: Geometry): void {
-        this._target.bind();
         this._program.bind();
 
         const indexed = geometry.base.index !== undefined;
@@ -115,11 +113,6 @@ export class GeometryPass extends Initializable {
         }
 
         this._program.unbind();
-        this._target.unbind();
-    }
-
-    public set target(target: Framebuffer) {
-        this._target = target;
     }
 
     public set viewProjection(value: mat4) {

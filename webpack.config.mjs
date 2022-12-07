@@ -51,5 +51,6 @@ export default function () {
             ]
         },
         devServer: { hot: false },
+        devtool: 'source-map'
     }
 }

@@ -8,6 +8,8 @@ export class IntermediateFramebuffer extends Initializable {
     public depthStencil: Texture2D;
     public worldPosition: Texture2D;
     public worldNormal: Texture2D;
+    public viewPosition: Texture2D;
+    public viewNormal: Texture2D;
     public color: Texture2D;
 
     public fbo: Framebuffer;
@@ -33,6 +35,14 @@ export class IntermediateFramebuffer extends Initializable {
         valid &&= this.worldNormal.initialize(
             1, 1, this._gl.RGBA16F, this._gl.RGBA, this._gl.HALF_FLOAT);
 
+        this.viewPosition = new Texture2D(this._context, 'tex:viewPosition');
+        valid &&= this.viewPosition.initialize(
+            1, 1, this._gl.RGBA16F, this._gl.RGBA, this._gl.HALF_FLOAT);
+
+        this.viewNormal = new Texture2D(this._context, 'tex:viewNormal');
+        valid &&= this.viewNormal.initialize(
+            1, 1, this._gl.RGBA16F, this._gl.RGBA, this._gl.HALF_FLOAT);
+
         this.color = new Texture2D(this._context, 'tex:color');
         valid &&= this.color.initialize(
             1, 1, this._gl.RGBA, this._gl.RGBA, this._gl.UNSIGNED_BYTE);
@@ -41,6 +51,8 @@ export class IntermediateFramebuffer extends Initializable {
         valid &&= this.fbo.initialize([
             [this._gl.COLOR_ATTACHMENT0 + FragmentLocation.WorldPosition, this.worldPosition],
             [this._gl.COLOR_ATTACHMENT0 + FragmentLocation.WorldNormal, this.worldNormal],
+            [this._gl.COLOR_ATTACHMENT0 + FragmentLocation.ViewPosition, this.viewPosition],
+            [this._gl.COLOR_ATTACHMENT0 + FragmentLocation.ViewNormal, this.viewNormal],
             [this._gl.COLOR_ATTACHMENT0 + FragmentLocation.Color, this.color],
             [this._gl.DEPTH_STENCIL_ATTACHMENT, this.depthStencil],
         ]);
