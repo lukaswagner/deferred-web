@@ -10,12 +10,12 @@ import {
     mat4,
     vec3,
 } from 'webgl-operate';
+import { createIndexedTriangle, createTriangle } from './geometry/triangle';
 import { drawBuffer, drawBuffers } from './util/drawBuffer';
 import { FragmentLocation } from './buffers/locations';
 import { Geometry } from './geometry/geometry';
 import { GeometryPass } from './passes/geometryPass';
 import { IntermediateFramebuffer } from './buffers/intermediateFramebuffer';
-import { createTriangle } from './geometry/triangle';
 
 export class DeferredRenderer extends Renderer {
     protected readonly _additionalAltered = Object.assign(new ChangeLookup(), {
@@ -76,7 +76,7 @@ export class DeferredRenderer extends Renderer {
         this._geometries.push(leftTriangle);
 
         const rightTriangle: Geometry = {
-            base: createTriangle(context),
+            base: createIndexedTriangle(context),
             model: mat4.fromTranslation(mat4.create(), [2, 0, 0]),
         };
         this._geometries.push(rightTriangle);

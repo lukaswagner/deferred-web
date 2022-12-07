@@ -119,15 +119,15 @@ export class GeometryPass extends Initializable {
 
         if (indexed) {
             if (instanced) {
-                console.log('drawElementsInstanced');
+                console.log('drawElementsInstanced not implemented');
                 // this._gl.drawElementsInstanced();
             } else {
-                console.log('drawElements');
-                // this._gl.drawElements();
+                this._gl.drawElements(
+                    geometry.base.mode, geometry.base.count, geometry.base.indexType!, 0);
             }
         } else {
             if (instanced) {
-                console.log('drawArraysInstanced');
+                console.log('drawArraysInstanced not implemented');
                 // this._gl.drawArraysInstanced();
             } else {
                 this._gl.drawArrays(geometry.base.mode, 0, geometry.base.count);
