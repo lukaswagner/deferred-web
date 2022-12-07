@@ -9,12 +9,12 @@ import {
     Renderer,
     vec3,
 } from 'webgl-operate';
+import { drawBuffer, drawBuffers } from './util/drawBuffer';
 import { FragmentLocation } from './buffers/locations';
 import { Geometry } from './geometry/geometry';
 import { GeometryPass } from './passes/geometryPass';
 import { IntermediateFramebuffer } from './buffers/intermediateFramebuffer';
 import { createTriangle } from './geometry/triangle';
-import { drawBuffer } from './util/drawBuffer';
 
 export class DeferredRenderer extends Renderer {
     protected readonly _additionalAltered = Object.assign(new ChangeLookup(), {
@@ -79,6 +79,8 @@ export class DeferredRenderer extends Renderer {
     }
 
     protected onUpdate(): boolean {
+        this._navigation.update();
+
         return this._altered.any ||
             this._additionalAltered.any ||
             this._camera.altered ||
@@ -94,6 +96,9 @@ export class DeferredRenderer extends Renderer {
         if (this._altered.canvasSize)
             this._camera.aspect = this._canvasSize[0] / this._canvasSize[1];
 
+        if (this._camera.altered)
+            this._geometryPass.viewProjection = this._camera.viewProjection;
+
         if (this._geometryPass.altered)
             this._geometryPass.prepare();
 
@@ -103,6 +108,10 @@ export class DeferredRenderer extends Renderer {
     }
 
     protected onFrame(): void {
+        this._gl.viewport(0, 0, this._frameSize[0], this._frameSize[1]);
+        drawBuffers(this._gl, 0b111);
+        this._iFBO.fbo.clear(
+            this._gl.COLOR_BUFFER_BIT | this._gl.DEPTH_BUFFER_BIT | this._gl.STENCIL_BUFFER_BIT);
         this._geometries.forEach((g) =>
             this._geometryPass.draw(g));
     }

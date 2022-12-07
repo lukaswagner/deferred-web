@@ -101,7 +101,6 @@ export class GeometryPass extends Initializable {
                 console.log('drawArraysInstanced');
                 // this._gl.drawArraysInstanced();
             } else {
-                console.log('drawArrays');
                 this._gl.drawArrays(geometry.base.mode, 0, geometry.base.count);
             }
         }

@@ -18,5 +18,7 @@ void main()
     v_normal = a_baseNormal;
     v_color = a_baseColor + a_instanceColor;
 
-    gl_Position = u_viewProjection * a_instanceMatrix * vec4(v_position, 1.0);
+    gl_Position = u_viewProjection *
+        // a_instanceMatrix *
+        vec4(v_position, 1.0);
 }
