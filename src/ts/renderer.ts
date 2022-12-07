@@ -3,6 +3,7 @@ import {
     ChangeLookup,
     Context,
     DefaultFramebuffer,
+    EventHandler,
     EventProvider,
     Invalidate,
     Navigation,
@@ -33,6 +34,8 @@ export class DeferredRenderer extends Renderer {
 
     protected _camera: Camera;
     protected _navigation: Navigation;
+    protected _eventHandler: EventHandler;
+    protected _scale = 0.1;
 
     protected _geometries: Geometry[];
 
@@ -57,15 +60,19 @@ export class DeferredRenderer extends Renderer {
         this._camera = new Camera();
         this._camera.center = vec3.fromValues(0, 0, 0);
         this._camera.up = vec3.fromValues(0, 1, 0);
-        this._camera.eye = vec3.fromValues(0, 0, 5);
+        this._camera.eye = vec3.fromValues(0, 0, 1);
         this._camera.fovy = 65;
         this._camera.near = 0.125;
         this._camera.far = 32.0;
+        this.updateCameraFromScale();
 
         this._navigation = new Navigation(invalidate, eventProvider);
         this._navigation.camera = this._camera;
-        // // @ts-expect-error: webgl-operate mouse wheel zoom is broken
-        // this._navigation._wheelZoom = { process: () => { } };
+        // @ts-expect-error: webgl-operate mouse wheel zoom is broken
+        this._navigation._wheelZoom = { process: () => { } };
+
+        this._eventHandler = new EventHandler(invalidate, eventProvider);
+        this._eventHandler.pushMouseWheelHandler((ev) => this.mouseWheel(ev as WheelEvent[]));
 
         this._geometries = [];
 
@@ -92,6 +99,7 @@ export class DeferredRenderer extends Renderer {
 
     protected onUpdate(): boolean {
         this._navigation.update();
+        this._eventHandler.update();
 
         return this._altered.any ||
             this._additionalAltered.any ||
@@ -146,6 +154,25 @@ export class DeferredRenderer extends Renderer {
             0, 0, this._frameSize[0], this._frameSize[1],
             this._gl.COLOR_BUFFER_BIT, this._gl.NEAREST);
         this._gl.bindFramebuffer(this._gl.READ_FRAMEBUFFER, null);
+    }
+
+    protected mouseWheel(events: WheelEvent[]) {
+        const event = events[events.length - 1];
+        const delta = event.deltaY;
+
+        const base = 1.15;
+        const exp = -Math.sign(delta);
+        const factor = (base ** exp);
+        this._scale = Math.max(this._scale * factor, 0.01);
+
+        this.updateCameraFromScale();
+    }
+
+    protected updateCameraFromScale() {
+        const temp = vec3.create();
+        vec3.normalize(temp, this._camera.eye);
+        vec3.scale(temp, temp, 1 / this._scale);
+        this._camera.eye = temp;
     }
 
     public set output(value: FragmentLocation) {
