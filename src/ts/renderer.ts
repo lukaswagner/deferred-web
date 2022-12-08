@@ -35,7 +35,7 @@ export class DeferredRenderer extends Renderer {
     protected _camera: Camera;
     protected _navigation: Navigation;
     protected _eventHandler: EventHandler;
-    protected _scale = 0.1;
+    protected _scale = 0.25;
 
     protected _geometries: Geometry[];
 
@@ -75,18 +75,6 @@ export class DeferredRenderer extends Renderer {
         this._eventHandler.pushMouseWheelHandler((ev) => this.mouseWheel(ev as WheelEvent[]));
 
         this._geometries = [];
-
-        const leftTriangle: Geometry = {
-            base: createTriangle(context),
-            model: mat4.fromTranslation(mat4.create(), [-2, 0, 0]),
-        };
-        this._geometries.push(leftTriangle);
-
-        const rightTriangle: Geometry = {
-            base: createIndexedTriangle(context),
-            model: mat4.fromTranslation(mat4.create(), [2, 0, 0]),
-        };
-        this._geometries.push(rightTriangle);
 
         return valid;
     }
@@ -161,8 +149,8 @@ export class DeferredRenderer extends Renderer {
         const delta = event.deltaY;
 
         const base = 1.15;
-        const exp = -Math.sign(delta);
-        const factor = (base ** exp);
+        const inv = 1 / base;
+        const factor = delta > 0 ? inv : base;
         this._scale = Math.max(this._scale * factor, 0.01);
 
         this.updateCameraFromScale();
@@ -173,6 +161,20 @@ export class DeferredRenderer extends Renderer {
         vec3.normalize(temp, this._camera.eye);
         vec3.scale(temp, temp, 1 / this._scale);
         this._camera.eye = temp;
+    }
+
+    public spawnDebugScene() {
+        const leftTriangle: Geometry = {
+            base: createTriangle(this._context),
+            model: mat4.fromTranslation(mat4.create(), [-1.5, 0, 0]),
+        };
+        this._geometries.push(leftTriangle);
+
+        const rightTriangle: Geometry = {
+            base: createIndexedTriangle(this._context),
+            model: mat4.fromTranslation(mat4.create(), [1.5, 0, 0]),
+        };
+        this._geometries.push(rightTriangle);
     }
 
     public set output(value: FragmentLocation) {

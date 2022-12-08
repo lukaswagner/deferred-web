@@ -14,6 +14,7 @@ export class App extends Initializable {
 
         this._renderer = new DeferredRenderer();
         this._canvas.renderer = this._renderer;
+        this._renderer.spawnDebugScene();
 
         canvas.addEventListener('dblclick', () => {
             viewer.Fullscreen.toggle(this._canvas.element);
