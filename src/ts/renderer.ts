@@ -207,5 +207,6 @@ export class DeferredRenderer extends Renderer {
     public set output(value: FragmentLocation) {
         this._output = value;
         this._additionalAltered.alter('output');
+        this._invalidate(false);
     }
 }
