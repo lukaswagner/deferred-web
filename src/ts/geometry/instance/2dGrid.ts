@@ -73,7 +73,7 @@ export function create2dGrid(context: Context, options?: Options): Instance {
             const index = i * count[1] + j;
             matrixData.set(mat, index * 16);
             // @ts-expect-error ts(2454) is reported incorrectly
-            if (colors) colorData.set([i / count[0], j / count[1], 0], index * 3);
+            if (colors) colorData.set([i / (count[0] - 1), j / (count[1] - 1), 0], index * 3);
         }
     }
 
@@ -102,7 +102,6 @@ export function create2dGrid(context: Context, options?: Options): Instance {
         type: gl.FLOAT,
         divisor: 1,
     });
-    // console.log(matrixData);
 
     return {
         buffers,

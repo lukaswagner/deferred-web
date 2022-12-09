@@ -9,7 +9,6 @@ import {
     Navigation,
     Renderer,
     mat4,
-    quat,
     vec3,
 } from 'webgl-operate';
 import { ColorMode, Geometry } from './geometry/geometry';
@@ -19,6 +18,7 @@ import { FragmentLocation } from './buffers/locations';
 import { GeometryPass } from './passes/geometryPass';
 import { IntermediateFramebuffer } from './buffers/intermediateFramebuffer';
 import { create2dGrid } from './geometry/instance/2dGrid';
+import { create3dGrid } from './geometry/instance/3dGrid';
 
 export class DeferredRenderer extends Renderer {
     protected readonly _additionalAltered = Object.assign(new ChangeLookup(), {
@@ -182,26 +182,37 @@ export class DeferredRenderer extends Renderer {
         this._geometries.push(triangleIndexed);
 
         const tiMat = mat4.create();
-        mat4.translate(tiMat, tiMat, [-0.6, -0.6, 0]);
+        mat4.translate(tiMat, tiMat, [-1, -1, 0]);
         mat4.scale(tiMat, tiMat, [0.2, 0.2, 0.2]);
         const triangleInstanced: Geometry = {
             base: createTriangle(this._context),
             model: tiMat,
-            instance: create2dGrid(this._context, { colors: true }),
+            instance: create2dGrid(this._context, { colors: true, center: [2, 2] }),
             colorMode: ColorMode.InstanceOnly,
         };
         this._geometries.push(triangleInstanced);
 
         const tiiMat = mat4.create();
-        mat4.translate(tiiMat, tiiMat, [0.4, -0.6, 0]);
+        mat4.translate(tiiMat, tiiMat, [0, -1, 0]);
         mat4.scale(tiiMat, tiiMat, [0.2, 0.2, 0.2]);
         const triangleIndexedInstanced: Geometry = {
             base: createIndexedTriangle(this._context),
             model: tiiMat,
-            instance: create2dGrid(this._context, { colors: true }),
+            instance: create2dGrid(this._context, { colors: true, center: [2, 2] }),
             colorMode: ColorMode.InstanceOnly,
         };
         this._geometries.push(triangleIndexedInstanced);
+
+        const cMat = mat4.create();
+        mat4.translate(cMat, cMat, [0, 0, -1]);
+        mat4.scale(cMat, cMat, [0.2, 0.2, 0.2]);
+        const cubes: Geometry = {
+            base: createTriangle(this._context),
+            model: cMat,
+            instance: create3dGrid(this._context, { colors: true, center: [2, 2, 2] }),
+            colorMode: ColorMode.InstanceOnly,
+        };
+        this._geometries.push(cubes);
     }
 
     public set output(value: FragmentLocation) {
