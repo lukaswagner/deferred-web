@@ -94,11 +94,11 @@ export class GeometryPass extends Initializable {
         this._program.unbind();
     }
 
-    public draw(geometry: Geometry): void {
+    public draw(geom: Geometry): void {
         this._program.bind();
 
-        const indexed = geometry.base.index !== undefined;
-        const instanced = geometry.instance !== undefined;
+        const indexed = geom.base.index !== undefined;
+        const instanced = geom.instance !== undefined;
 
         if (instanced !== this._instanced.value) {
             this._instanced.value = instanced;
@@ -106,69 +106,47 @@ export class GeometryPass extends Initializable {
         }
 
         if (instanced) {
-            const colorMode = geometry.colorMode ?? ColorMode.BaseOnly;
+            const colorMode = geom.colorMode ?? ColorMode.BaseOnly;
             if (colorMode !== this._colorMode.value) {
                 this._colorMode.value = colorMode;
                 this._gl.uniform1i(this._colorMode.location, this._colorMode.value);
             }
         }
 
-        const model = geometry.model ?? mat4.create();
-
+        const model = geom.model ?? mat4.create();
         if (!mat4.equals(model, this._model.value)) {
             this._model.value = model;
             this._gl.uniformMatrix4fv(this._model.location, false, this._model.value);
         }
 
-        if (indexed) geometry.base.index!.bind();
+        const base = geom.base;
+        const inst = geom.instance!;
 
+        if (indexed) base.index!.bind();
+
+        base.buffers.forEach((b) => b.buffer.attribEnable(b.location, b.size, b.type));
         if (instanced) {
-            geometry.base.buffers.forEach((b) => {
-                b.buffer.attribEnable(b.location, b.size, b.type);
+            base.buffers.forEach((b) => this._gl.vertexAttribDivisor(b.location, b.divisor));
+            inst.buffers.forEach((b) => {
+                b.buffer.attribEnable(b.location, b.size, b.type, false, b.stride, b.offset);
                 this._gl.vertexAttribDivisor(b.location, b.divisor);
-            });
-            geometry.instance!.buffers.forEach((b) => {
-                if (b.stride !== undefined && b.offset !== undefined) {
-                    b.buffer.attribEnable(b.location, b.size, b.type, false, b.stride, b.offset);
-                } else {
-                    b.buffer.attribEnable(b.location, b.size, b.type);
-                }
-                this._gl.vertexAttribDivisor(b.location, b.divisor);
-            });
-
-        } else {
-            geometry.base.buffers.forEach((b) => {
-                b.buffer.attribEnable(b.location, b.size, b.type);
             });
         }
 
         if (indexed) {
-            if (instanced) {
-                this._gl.drawElementsInstanced(
-                    geometry.base.mode, geometry.base.count, geometry.base.indexType!, 0,
-                    geometry.instance!.count);
-            } else {
-                this._gl.drawElements(
-                    geometry.base.mode, geometry.base.count, geometry.base.indexType!, 0);
-            }
+            if (instanced) this._gl.drawElementsInstanced(
+                base.mode, base.count, base.indexType!, 0, inst.count);
+            else this._gl.drawElements(
+                base.mode, base.count, base.indexType!, 0);
         } else {
-            if (instanced) {
-                this._gl.drawArraysInstanced(
-                    geometry.base.mode, 0, geometry.base.count,
-                    geometry.instance!.count);
-            } else {
-                this._gl.drawArrays(
-                    geometry.base.mode, 0, geometry.base.count);
-            }
+            if (instanced) this._gl.drawArraysInstanced(
+                base.mode, 0, base.count, inst.count);
+            else this._gl.drawArrays(
+                base.mode, 0, base.count);
         }
 
-        if (instanced) {
-            this._gl.bindVertexArray(null);
-        } else {
-            geometry.base.buffers.forEach((b) => {
-                b.buffer.attribDisable(b.location);
-            });
-        }
+        if (instanced) inst.buffers.forEach((b) => b.buffer.attribDisable(b.location));
+        base.buffers.forEach((b) => b.buffer.attribDisable(b.location));
 
         this._program.unbind();
     }
