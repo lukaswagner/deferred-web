@@ -78,6 +78,7 @@ export class DeferredRenderer extends Renderer {
         this._geometries = [];
 
         this._gl.enable(this._gl.CULL_FACE);
+        this._gl.enable(this._gl.DEPTH_TEST);
 
         return valid;
     }
