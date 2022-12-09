@@ -9,6 +9,7 @@ import {
     Navigation,
     Renderer,
     mat4,
+    quat,
     vec3,
 } from 'webgl-operate';
 import { ColorMode, Geometry } from './geometry/geometry';
@@ -170,27 +171,33 @@ export class DeferredRenderer extends Renderer {
     public spawnDebugScene() {
         const triangle: Geometry = {
             base: createTriangle(this._context),
-            model: mat4.fromTranslation(mat4.create(), [0, 0, 0]),
+            model: mat4.fromTranslation(mat4.create(), [-1, 0, 0]),
         };
         this._geometries.push(triangle);
 
         const triangleIndexed: Geometry = {
             base: createIndexedTriangle(this._context),
-            model: mat4.fromTranslation(mat4.create(), [0, 0, -1]),
+            model: mat4.create(),
         };
         this._geometries.push(triangleIndexed);
 
+        const tiMat = mat4.create();
+        mat4.translate(tiMat, tiMat, [-0.6, -0.6, 0]);
+        mat4.scale(tiMat, tiMat, [0.2, 0.2, 0.2]);
         const triangleInstanced: Geometry = {
             base: createTriangle(this._context),
-            model: mat4.fromTranslation(mat4.create(), [0, 0, -2]),
+            model: tiMat,
             instance: create2dGrid(this._context, { colors: true }),
             colorMode: ColorMode.InstanceOnly,
         };
         this._geometries.push(triangleInstanced);
 
+        const tiiMat = mat4.create();
+        mat4.translate(tiiMat, tiiMat, [0.4, -0.6, 0]);
+        mat4.scale(tiiMat, tiiMat, [0.2, 0.2, 0.2]);
         const triangleIndexedInstanced: Geometry = {
             base: createIndexedTriangle(this._context),
-            model: mat4.fromTranslation(mat4.create(), [0, 0, -3]),
+            model: tiiMat,
             instance: create2dGrid(this._context, { colors: true }),
             colorMode: ColorMode.InstanceOnly,
         };

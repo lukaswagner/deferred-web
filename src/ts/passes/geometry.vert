@@ -19,8 +19,8 @@ out vec3 v_color;
 
 void main()
 {
-    v_worldPosition = u_model * vec4(a_basePosition, 1.0);
-    v_worldNormal = u_model * vec4(a_baseNormal, 0.0);
+    v_worldPosition = vec4(a_basePosition, 1.0);
+    v_worldNormal = vec4(a_baseNormal, 0.0);
 
     v_color = a_baseColor;
 
@@ -47,8 +47,13 @@ void main()
         }
     }
 
+    v_worldPosition = u_model * v_worldPosition;
+    v_worldNormal = u_model * v_worldNormal;
+    v_worldNormal = normalize(v_worldNormal);
+
     v_viewPosition = u_viewProjection * v_worldPosition;
     v_viewNormal = u_viewProjection * v_worldNormal;
+    v_viewNormal = normalize(v_viewNormal);
 
     gl_Position = v_viewPosition;
 }
