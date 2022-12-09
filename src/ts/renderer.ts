@@ -168,25 +168,33 @@ export class DeferredRenderer extends Renderer {
     }
 
     public spawnDebugScene() {
-        const leftTriangle: Geometry = {
+        const triangle: Geometry = {
             base: createTriangle(this._context),
-            model: mat4.fromTranslation(mat4.create(), [-1.5, 0, 0]),
+            model: mat4.fromTranslation(mat4.create(), [0, 0, 0]),
         };
-        this._geometries.push(leftTriangle);
+        this._geometries.push(triangle);
 
-        const rightTriangle: Geometry = {
+        const triangleIndexed: Geometry = {
             base: createIndexedTriangle(this._context),
-            model: mat4.fromTranslation(mat4.create(), [1.5, 0, 0]),
-        };
-        this._geometries.push(rightTriangle);
-
-        const triangleGrid: Geometry = {
-            base: createTriangle(this._context),
             model: mat4.fromTranslation(mat4.create(), [0, 0, -1]),
+        };
+        this._geometries.push(triangleIndexed);
+
+        const triangleInstanced: Geometry = {
+            base: createTriangle(this._context),
+            model: mat4.fromTranslation(mat4.create(), [0, 0, -2]),
             instance: create2dGrid(this._context, { colors: true }),
             colorMode: ColorMode.InstanceOnly,
         };
-        this._geometries.push(triangleGrid);
+        this._geometries.push(triangleInstanced);
+
+        const triangleIndexedInstanced: Geometry = {
+            base: createIndexedTriangle(this._context),
+            model: mat4.fromTranslation(mat4.create(), [0, 0, -3]),
+            instance: create2dGrid(this._context, { colors: true }),
+            colorMode: ColorMode.InstanceOnly,
+        };
+        this._geometries.push(triangleIndexedInstanced);
     }
 
     public set output(value: FragmentLocation) {

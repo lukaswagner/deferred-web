@@ -137,7 +137,6 @@ export class GeometryPass extends Initializable {
             });
 
         } else {
-            // bind base buffers individually
             geometry.base.buffers.forEach((b) => {
                 b.buffer.attribEnable(b.location, b.size, b.type);
             });
@@ -145,8 +144,9 @@ export class GeometryPass extends Initializable {
 
         if (indexed) {
             if (instanced) {
-                console.log('drawElementsInstanced not implemented');
-                // this._gl.drawElementsInstanced();
+                this._gl.drawElementsInstanced(
+                    geometry.base.mode, geometry.base.count, geometry.base.indexType!, 0,
+                    geometry.instance!.count);
             } else {
                 this._gl.drawElements(
                     geometry.base.mode, geometry.base.count, geometry.base.indexType!, 0);
@@ -154,9 +154,11 @@ export class GeometryPass extends Initializable {
         } else {
             if (instanced) {
                 this._gl.drawArraysInstanced(
-                    geometry.base.mode, 0, geometry.base.count, geometry.instance!.count);
+                    geometry.base.mode, 0, geometry.base.count,
+                    geometry.instance!.count);
             } else {
-                this._gl.drawArrays(geometry.base.mode, 0, geometry.base.count);
+                this._gl.drawArrays(
+                    geometry.base.mode, 0, geometry.base.count);
             }
         }
 
