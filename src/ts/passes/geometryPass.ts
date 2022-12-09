@@ -6,8 +6,8 @@ import {
     Shader,
     mat4,
 } from 'webgl-operate';
+import { ColorMode, Geometry } from '../geometry/geometry';
 import { FragmentLocation } from '../buffers/locations';
-import { Geometry } from '../geometry/geometry';
 import { Uniform } from './uniform';
 
 export class GeometryPass extends Initializable {
@@ -23,6 +23,7 @@ export class GeometryPass extends Initializable {
     protected _model: Uniform<mat4>;
     protected _viewProjection: Uniform<mat4>;
     protected _instanced: Uniform<boolean>;
+    protected _colorMode: Uniform<ColorMode>;
 
     public constructor(context: Context) {
         super();
@@ -70,6 +71,12 @@ export class GeometryPass extends Initializable {
         };
         this._gl.uniform1i(this._instanced.location, +this._instanced.value);
 
+        this._colorMode = {
+            value: ColorMode.BaseOnly,
+            location: this._program.uniform('u_colorMode'),
+        };
+        this._gl.uniform1i(this._colorMode.location, this._colorMode.value);
+
         this._program.unbind();
 
         return valid;
@@ -91,11 +98,19 @@ export class GeometryPass extends Initializable {
         this._program.bind();
 
         const indexed = geometry.base.index !== undefined;
-        const instanced = geometry.vao !== undefined;
+        const instanced = geometry.instance !== undefined;
 
         if (instanced !== this._instanced.value) {
             this._instanced.value = instanced;
             this._gl.uniform1i(this._instanced.location, +this._instanced.value);
+        }
+
+        if (instanced) {
+            const colorMode = geometry.colorMode ?? ColorMode.BaseOnly;
+            if (colorMode !== this._colorMode.value) {
+                this._colorMode.value = colorMode;
+                this._gl.uniform1i(this._colorMode.location, this._colorMode.value);
+            }
         }
 
         const model = geometry.model ?? mat4.create();
@@ -108,8 +123,19 @@ export class GeometryPass extends Initializable {
         if (indexed) geometry.base.index!.bind();
 
         if (instanced) {
-            // vao already prepared
-            this._gl.bindVertexArray(geometry.vao!);
+            geometry.base.buffers.forEach((b) => {
+                b.buffer.attribEnable(b.location, b.size, b.type);
+                this._gl.vertexAttribDivisor(b.location, b.divisor);
+            });
+            geometry.instance!.buffers.forEach((b) => {
+                if (b.stride !== undefined && b.offset !== undefined) {
+                    b.buffer.attribEnable(b.location, b.size, b.type, false, b.stride, b.offset);
+                } else {
+                    b.buffer.attribEnable(b.location, b.size, b.type);
+                }
+                this._gl.vertexAttribDivisor(b.location, b.divisor);
+            });
+
         } else {
             // bind base buffers individually
             geometry.base.buffers.forEach((b) => {
@@ -127,8 +153,8 @@ export class GeometryPass extends Initializable {
             }
         } else {
             if (instanced) {
-                console.log('drawArraysInstanced not implemented');
-                // this._gl.drawArraysInstanced();
+                this._gl.drawArraysInstanced(
+                    geometry.base.mode, 0, geometry.base.count, geometry.instance!.count);
             } else {
                 this._gl.drawArrays(geometry.base.mode, 0, geometry.base.count);
             }
@@ -137,7 +163,6 @@ export class GeometryPass extends Initializable {
         if (instanced) {
             this._gl.bindVertexArray(null);
         } else {
-            // bind base buffers individually
             geometry.base.buffers.forEach((b) => {
                 b.buffer.attribDisable(b.location);
             });

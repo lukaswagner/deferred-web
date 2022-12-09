@@ -36,6 +36,7 @@ export class App extends Initializable {
         this._ui.input.select({
             label: 'output',
             optionValues: Object.keys(FragmentLocation).filter((v) => isNaN(Number(v))),
+            value: 'Color',
             handler: (v) =>
                 this._renderer.output = FragmentLocation[v.value as keyof typeof FragmentLocation],
         });

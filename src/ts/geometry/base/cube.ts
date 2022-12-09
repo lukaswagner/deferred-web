@@ -1,6 +1,6 @@
 import { Buffer, Context } from 'webgl-operate';
-import { Base } from './base';
-import { VertexLocations } from './locations';
+import { Base } from '../base';
+import { VertexLocations } from '../locations';
 
 const indexData = new Uint8Array([
     // front

@@ -11,12 +11,13 @@ import {
     mat4,
     vec3,
 } from 'webgl-operate';
-import { createIndexedTriangle, createTriangle } from './geometry/triangle';
+import { ColorMode, Geometry } from './geometry/geometry';
+import { createIndexedTriangle, createTriangle } from './geometry/base/triangle';
 import { drawBuffer, drawBuffers } from './util/drawBuffer';
 import { FragmentLocation } from './buffers/locations';
-import { Geometry } from './geometry/geometry';
 import { GeometryPass } from './passes/geometryPass';
 import { IntermediateFramebuffer } from './buffers/intermediateFramebuffer';
+import { create2dGrid } from './geometry/instance/2dGrid';
 
 export class DeferredRenderer extends Renderer {
     protected readonly _additionalAltered = Object.assign(new ChangeLookup(), {
@@ -75,6 +76,8 @@ export class DeferredRenderer extends Renderer {
         this._eventHandler.pushMouseWheelHandler((ev) => this.mouseWheel(ev as WheelEvent[]));
 
         this._geometries = [];
+
+        this._gl.enable(this._gl.CULL_FACE);
 
         return valid;
     }
@@ -175,6 +178,14 @@ export class DeferredRenderer extends Renderer {
             model: mat4.fromTranslation(mat4.create(), [1.5, 0, 0]),
         };
         this._geometries.push(rightTriangle);
+
+        const triangleGrid: Geometry = {
+            base: createTriangle(this._context),
+            model: mat4.fromTranslation(mat4.create(), [0, 0, -1]),
+            instance: create2dGrid(this._context, { colors: true }),
+            colorMode: ColorMode.InstanceOnly,
+        };
+        this._geometries.push(triangleGrid);
     }
 
     public set output(value: FragmentLocation) {

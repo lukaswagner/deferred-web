@@ -6,4 +6,6 @@ export interface BufferInfo {
     size: number;
     type: number;
     divisor: number;
+    stride?: number;
+    offset?: number;
 }

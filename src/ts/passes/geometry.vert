@@ -9,6 +9,7 @@ in vec3 a_instanceColor;
 uniform mat4 u_model;
 uniform mat4 u_viewProjection;
 uniform bool u_instanced;
+uniform int u_colorMode;
 
 out vec4 v_worldPosition;
 out vec4 v_worldNormal;
@@ -28,7 +29,22 @@ void main()
         v_worldPosition = a_instanceMatrix * v_worldPosition;
         v_worldNormal = a_instanceMatrix * v_worldNormal;
 
-        v_color = a_instanceColor;
+        switch(u_colorMode) {
+            case 0: // BaseOnly
+                break;
+            case 1: // InstanceOnly
+                v_color = a_instanceColor;
+                break;
+            case 2: // Additive
+                v_color += a_instanceColor;
+                break;
+            case 3: // Multiplicative
+                v_color *= a_instanceColor;
+                break;
+            default:
+                v_color = vec3(1, 0, 1);
+                break;
+        }
     }
 
     v_viewPosition = u_viewProjection * v_worldPosition;
