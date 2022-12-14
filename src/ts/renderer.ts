@@ -5,21 +5,31 @@ import {
     DefaultFramebuffer,
     EventHandler,
     EventProvider,
+    Framebuffer,
     Invalidate,
     Navigation,
     Renderer,
+    Texture2D,
     mat4,
     vec3,
 } from 'webgl-operate';
 import { ColorMode, Geometry } from './geometry/geometry';
 import { createIndexedTriangle, createTriangle } from './geometry/base/triangle';
 import { drawBuffer, drawBuffers } from './util/drawBuffer';
+import { DirectionalLightPass } from './passes/directionalLightPass';
 import { FragmentLocation } from './buffers/locations';
 import { GeometryPass } from './passes/geometryPass';
 import { IntermediateFramebuffer } from './buffers/intermediateFramebuffer';
+import { LightPass } from './passes/lightPass';
 import { create2dGrid } from './geometry/instance/2dGrid';
 import { create3dGrid } from './geometry/instance/3dGrid';
 import { createCube } from './geometry/base/cube';
+
+interface LightData {
+    tex: Texture2D;
+    fbo: Framebuffer;
+    pass: LightPass;
+}
 
 export class DeferredRenderer extends Renderer {
     protected readonly _additionalAltered = Object.assign(new ChangeLookup(), {
@@ -34,6 +44,8 @@ export class DeferredRenderer extends Renderer {
     protected _dFBO: DefaultFramebuffer;
 
     protected _geometryPass: GeometryPass;
+
+    protected _lights: LightData[] = [];
 
     protected _camera: Camera;
     protected _navigation: Navigation;
@@ -59,6 +71,8 @@ export class DeferredRenderer extends Renderer {
 
         this._geometryPass = new GeometryPass(context);
         valid &&= this._geometryPass.initialize();
+
+        this._lights.push(this.setupLightPass(DirectionalLightPass));
 
         this._camera = new Camera();
         this._camera.center = vec3.fromValues(0, 0, 0);
@@ -98,12 +112,14 @@ export class DeferredRenderer extends Renderer {
         return this._altered.any ||
             this._additionalAltered.any ||
             this._camera.altered ||
-            this._geometryPass.altered;
+            this._geometryPass.altered ||
+            this._lights.some((l) => l.pass.altered);
     }
 
     protected onPrepare(): void {
         if (this._altered.frameSize) {
             this._iFBO.resize(...this._frameSize);
+            this._lights.forEach((l) => l.fbo.resize(...this._frameSize));
             this._camera.viewport = [this._frameSize[0], this._frameSize[1]];
         }
 
@@ -116,9 +132,14 @@ export class DeferredRenderer extends Renderer {
         if (this._geometryPass.altered)
             this._geometryPass.prepare();
 
+        this._lights.forEach((l) => {
+            if (l.pass.altered) l.pass.prepare();
+        });
+
         this._altered.reset();
         this._camera.altered = false;
         this._geometryPass.altered = false;
+        this._lights.forEach((l) => l.pass.altered = false);
     }
 
     protected onFrame(): void {
@@ -136,12 +157,20 @@ export class DeferredRenderer extends Renderer {
             this._geometryPass.draw(g));
 
         this._iFBO.fbo.unbind();
+
+        this._lights.forEach((l) => {
+            l.fbo.bind();
+            l.pass.draw();
+            l.fbo.unbind();
+        });
     }
 
     protected onSwap(): void {
-        this._gl.bindFramebuffer(this._gl.READ_FRAMEBUFFER, this._iFBO.fbo.object);
+        // this._gl.bindFramebuffer(this._gl.READ_FRAMEBUFFER, this._iFBO.fbo.object);
+        this._gl.bindFramebuffer(this._gl.READ_FRAMEBUFFER, this._lights[0].fbo.object);
         this._gl.bindFramebuffer(this._gl.DRAW_FRAMEBUFFER, null);
-        this._gl.readBuffer(this._gl.COLOR_ATTACHMENT0 + this._output);
+        // this._gl.readBuffer(this._gl.COLOR_ATTACHMENT0 + this._output);
+        this._gl.readBuffer(this._gl.COLOR_ATTACHMENT0);
         drawBuffer(this._gl, this._gl.BACK);
         this._gl.blitFramebuffer(
             0, 0, this._frameSize[0], this._frameSize[1],
@@ -214,6 +243,20 @@ export class DeferredRenderer extends Renderer {
             colorMode: ColorMode.InstanceOnly,
         };
         this._geometries.push(cubes);
+    }
+
+    protected setupLightPass<T extends LightPass>(ctor: new (context: Context) => T): LightData {
+        const tex = new Texture2D(this._context);
+        tex.initialize(1, 1, this._gl.RGBA, this._gl.RGBA, this._gl.UNSIGNED_BYTE);
+
+        const fbo = new Framebuffer(this._context);
+        fbo.initialize([[this._gl.COLOR_ATTACHMENT0, tex]]);
+
+        const pass = new ctor(this._context);
+        pass.initialize();
+        pass.textures = this._iFBO;
+
+        return { tex, fbo, pass };
     }
 
     public set output(value: FragmentLocation) {
