@@ -19,6 +19,7 @@ import { GeometryPass } from './passes/geometryPass';
 import { IntermediateFramebuffer } from './buffers/intermediateFramebuffer';
 import { create2dGrid } from './geometry/instance/2dGrid';
 import { create3dGrid } from './geometry/instance/3dGrid';
+import { createCube } from './geometry/base/cube';
 
 export class DeferredRenderer extends Renderer {
     protected readonly _additionalAltered = Object.assign(new ChangeLookup(), {
@@ -204,12 +205,12 @@ export class DeferredRenderer extends Renderer {
         this._geometries.push(triangleIndexedInstanced);
 
         const cMat = mat4.create();
-        mat4.translate(cMat, cMat, [0, 0, -1]);
-        mat4.scale(cMat, cMat, [0.2, 0.2, 0.2]);
+        mat4.translate(cMat, cMat, [0.7, 0.7, -0.9]);
+        mat4.scale(cMat, cMat, [0.1, 0.1, 0.1]);
         const cubes: Geometry = {
-            base: createTriangle(this._context),
+            base: createCube(this._context),
             model: cMat,
-            instance: create3dGrid(this._context, { colors: true, center: [2, 2, 2] }),
+            instance: create3dGrid(this._context, { colors: true, step: [3, 3, 3] }),
             colorMode: ColorMode.InstanceOnly,
         };
         this._geometries.push(cubes);

@@ -6,6 +6,21 @@ const indexData = new Uint8Array([
     // front
     5, 17, 23,
     23, 11, 5,
+    // back
+    2, 8, 14,
+    8, 20, 14,
+    // left
+    0, 3, 6,
+    6, 3, 9,
+    // right
+    12, 18, 15,
+    15, 18, 21,
+    // bottom
+    1, 13, 4,
+    4, 13, 16,
+    // top
+    7, 10, 19,
+    19, 10, 22,
 ]);
 
 const mmm = [-1, -1, -1];
@@ -78,6 +93,6 @@ export function createCube(context: Context): Base {
             divisor: 0,
         }],
         mode: gl.TRIANGLES,
-        count: 6,
+        count: indexData.length,
     };
 }
