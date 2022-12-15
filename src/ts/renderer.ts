@@ -14,14 +14,12 @@ import {
     vec3,
 } from 'webgl-operate';
 import { ColorMode, Geometry } from './geometry/geometry';
-import { createIndexedTriangle, createTriangle } from './geometry/base/triangle';
 import { drawBuffer, drawBuffers } from './util/drawBuffer';
 import { DirectionalLightPass } from './passes/directionalLightPass';
 import { FragmentLocation } from './buffers/locations';
 import { GeometryPass } from './passes/geometryPass';
 import { IntermediateFramebuffer } from './buffers/intermediateFramebuffer';
 import { LightPass } from './passes/lightPass';
-import { create2dGrid } from './geometry/instance/2dGrid';
 import { create3dGrid } from './geometry/instance/3dGrid';
 import { createCube } from './geometry/base/cube';
 
@@ -72,7 +70,13 @@ export class DeferredRenderer extends Renderer {
         this._geometryPass = new GeometryPass(context);
         valid &&= this._geometryPass.initialize();
 
-        this._lights.push(this.setupLightPass(DirectionalLightPass));
+        const dirLightsPass = new DirectionalLightPass(context);
+        dirLightsPass.initialize(2);
+        dirLightsPass.data = {
+            dir: [[0, -1, -1], [-1, -1, 0]],
+            color: [[1, 0.2, 0.2], [0.2, 0.2, 1]],
+        };
+        this.addLightPass(dirLightsPass);
 
         this._camera = new Camera();
         this._camera.center = vec3.fromValues(0, 0, 0);
@@ -199,64 +203,26 @@ export class DeferredRenderer extends Renderer {
     }
 
     public spawnDebugScene() {
-        const triangle: Geometry = {
-            base: createTriangle(this._context),
-            model: mat4.fromTranslation(mat4.create(), [-1, 0, 0]),
-        };
-        this._geometries.push(triangle);
-
-        const triangleIndexed: Geometry = {
-            base: createIndexedTriangle(this._context),
-            model: mat4.create(),
-        };
-        this._geometries.push(triangleIndexed);
-
-        const tiMat = mat4.create();
-        mat4.translate(tiMat, tiMat, [-1, -1, 0]);
-        mat4.scale(tiMat, tiMat, [0.2, 0.2, 0.2]);
-        const triangleInstanced: Geometry = {
-            base: createTriangle(this._context),
-            model: tiMat,
-            instance: create2dGrid(this._context, { colors: true, center: [2, 2] }),
-            colorMode: ColorMode.InstanceOnly,
-        };
-        this._geometries.push(triangleInstanced);
-
-        const tiiMat = mat4.create();
-        mat4.translate(tiiMat, tiiMat, [0, -1, 0]);
-        mat4.scale(tiiMat, tiiMat, [0.2, 0.2, 0.2]);
-        const triangleIndexedInstanced: Geometry = {
-            base: createIndexedTriangle(this._context),
-            model: tiiMat,
-            instance: create2dGrid(this._context, { colors: true, center: [2, 2] }),
-            colorMode: ColorMode.InstanceOnly,
-        };
-        this._geometries.push(triangleIndexedInstanced);
-
         const cMat = mat4.create();
-        mat4.translate(cMat, cMat, [0.7, 0.7, -0.9]);
-        mat4.scale(cMat, cMat, [0.1, 0.1, 0.1]);
+        mat4.scale(cMat, cMat, [0.2, 0.2, 0.2]);
         const cubes: Geometry = {
             base: createCube(this._context),
             model: cMat,
-            instance: create3dGrid(this._context, { colors: true, step: [3, 3, 3] }),
-            colorMode: ColorMode.InstanceOnly,
+            instance: create3dGrid(this._context, { colors: false, step: [3, 3, 3] }),
+            colorMode: ColorMode.BaseOnly,
         };
         this._geometries.push(cubes);
     }
 
-    protected setupLightPass<T extends LightPass>(ctor: new (context: Context) => T): LightData {
+    protected addLightPass(pass: LightPass): void {
         const tex = new Texture2D(this._context);
         tex.initialize(1, 1, this._gl.RGBA, this._gl.RGBA, this._gl.UNSIGNED_BYTE);
 
         const fbo = new Framebuffer(this._context);
         fbo.initialize([[this._gl.COLOR_ATTACHMENT0, tex]]);
-
-        const pass = new ctor(this._context);
-        pass.initialize();
         pass.textures = this._iFBO;
 
-        return { tex, fbo, pass };
+        this._lights.push({ tex, fbo, pass });
     }
 
     public set output(value: FragmentLocation) {

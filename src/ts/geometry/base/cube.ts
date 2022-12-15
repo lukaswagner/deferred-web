@@ -61,6 +61,12 @@ const normalData = new Float32Array([
     ...nr, ...nu, ...nf,
 ]);
 
+const white = [1, 1, 1];
+const colorData = new Float32Array(3 * 3 * 8);
+for (let i = 0; i < 3 * 8; i++) {
+    colorData.set(white, i * 3);
+}
+
 export function createCube(context: Context): Base {
     const gl = context.gl as WebGL2RenderingContext;
 
@@ -76,6 +82,10 @@ export function createCube(context: Context): Base {
     normal.initialize(gl.ARRAY_BUFFER);
     normal.data(normalData.buffer, gl.STATIC_DRAW);
 
+    const color = new Buffer(context);
+    color.initialize(gl.ARRAY_BUFFER);
+    color.data(colorData.buffer, gl.STATIC_DRAW);
+
     return {
         index,
         indexType: gl.UNSIGNED_BYTE,
@@ -88,6 +98,12 @@ export function createCube(context: Context): Base {
         }, {
             buffer: normal,
             location: VertexLocations.baseNormal,
+            size: 3,
+            type: gl.FLOAT,
+            divisor: 0,
+        }, {
+            buffer: color,
+            location: VertexLocations.baseColor,
             size: 3,
             type: gl.FLOAT,
             divisor: 0,
