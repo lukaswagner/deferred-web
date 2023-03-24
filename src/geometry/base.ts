@@ -1,8 +1,7 @@
-import { Buffer } from 'webgl-operate';
 import { BufferInfo } from './bufferInfo';
 
 export interface Base {
-    index?: Buffer;
+    index?: WebGLBuffer;
     indexType?: number;
     buffers: BufferInfo[];
     mode: number;

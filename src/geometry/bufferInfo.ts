@@ -1,7 +1,5 @@
-import { Buffer } from 'webgl-operate';
-
 export interface BufferInfo {
-    buffer: Buffer;
+    buffer: WebGLBuffer;
     location: number;
     size: number;
     type: number;

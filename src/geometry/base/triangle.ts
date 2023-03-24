@@ -1,24 +1,21 @@
-import { Buffer, Context } from 'webgl-operate';
 import { Base } from '../base';
 import { VertexLocations } from '../locations';
 
-export function createTriangle(context: Context): Base {
-    const gl = context.gl as WebGL2RenderingContext;
-
-    const position = new Buffer(context, 'buf:trianglePosition');
-    position.initialize(gl.ARRAY_BUFFER);
+export function createTriangle(gl: WebGL2RenderingContext): Base {
+    const position = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, position);
     const positionData = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
-    position.data(positionData.buffer, gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, positionData.buffer, gl.STATIC_DRAW);
 
-    const normal = new Buffer(context, 'buf:triangleNormal');
-    normal.initialize(gl.ARRAY_BUFFER);
+    const normal = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, normal);
     const normalData = new Float32Array([0, 0, 1, 0, 0, 1, 0, 0, 1]);
-    normal.data(normalData.buffer, gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, normalData.buffer, gl.STATIC_DRAW);
 
-    const color = new Buffer(context, 'buf:triangleColor');
-    color.initialize(gl.ARRAY_BUFFER);
+    const color = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, color);
     const colorData = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
-    color.data(colorData.buffer, gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, colorData.buffer, gl.STATIC_DRAW);
 
     return {
         buffers: [{
@@ -45,15 +42,13 @@ export function createTriangle(context: Context): Base {
     };
 }
 
-export function createIndexedTriangle(context: Context): Base {
-    const gl = context.gl as WebGL2RenderingContext;
+export function createIndexedTriangle(gl: WebGL2RenderingContext): Base {
+    const triangle = createTriangle(gl);
 
-    const triangle = createTriangle(context);
-
-    const index = new Buffer(context, 'buf:triangleIndex');
-    index.initialize(gl.ELEMENT_ARRAY_BUFFER);
+    const index = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index);
     const indexData = new Uint8Array([0, 1, 2]);
-    index.data(indexData.buffer, gl.STATIC_DRAW);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indexData.buffer, gl.STATIC_DRAW);
 
     return Object.assign(triangle, { index, indexType: gl.UNSIGNED_BYTE });
 }

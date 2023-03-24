@@ -4,7 +4,6 @@
         "noImplicitAny": true,
         "module": "ES2022",
         "target": "ES2022",
-        "lib": ["ES2022", "DOM"],
-        "strictNullChecks": true
+        "lib": ["ES2022", "DOM"]
     }
 }

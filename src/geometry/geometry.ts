@@ -1,6 +1,6 @@
 import { Base } from './base';
 import { Instance } from './instance';
-import { mat4 } from 'webgl-operate';
+import { mat4 } from 'gl-matrix';
 
 export enum ColorMode {
     BaseOnly = 0,

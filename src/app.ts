@@ -1,44 +1,35 @@
-import { Canvas, Initializable, viewer } from 'webgl-operate';
-import { DeferredRenderer } from './renderer';
-import { FragmentLocation } from './buffers/locations';
-import { UI } from '@lukaswagner/web-ui';
+import { Camera } from './util/camera';
+import { Renderer } from './renderer';
 
-export class App extends Initializable {
-    protected _canvas: Canvas;
-    protected _renderer: DeferredRenderer;
-    protected _ui: UI;
+const canvas = document.getElementById('webgl-canvas') as HTMLCanvasElement;
+const contextAttributes: WebGLContextAttributes = { antialias: false, alpha: false };
+const gl = canvas.getContext('webgl2', contextAttributes);
+if (!gl) throw new Error('Could not acquire WebGL context');
 
-    public initialize(canvas: HTMLCanvasElement): boolean {
-        this._canvas = new Canvas(canvas, { antialias: false, alpha: false });
-        if (!this._canvas.context.isWebGL2) alert('WebGL 2 not supported!');
+const camera = new Camera();
 
-        this._renderer = new DeferredRenderer();
-        this._canvas.renderer = this._renderer;
-        this._renderer.spawnDebugScene();
+const renderer = new Renderer(gl);
+renderer.camera = camera;
+renderer.initialize();
+// renderer.spawnDebugScene();
 
-        canvas.addEventListener('dblclick', () => {
-            viewer.Fullscreen.toggle(this._canvas.element);
-        });
-
-        this.setupUI();
-
-        return true;
-    }
-
-    public uninitialize(): void {
-    }
-
-    protected setupUI(): void {
-        const uiId = 'ui';
-        const ui = document.getElementById(uiId) as HTMLCanvasElement;
-        this._ui = new UI(ui, true);
-
-        this._ui.input.select({
-            label: 'output',
-            optionValues: Object.keys(FragmentLocation).filter((v) => isNaN(Number(v))),
-            value: 'Color',
-            handler: (v) =>
-                this._renderer.output = FragmentLocation[v.value as keyof typeof FragmentLocation],
-        });
-    }
+function drawLoop(time: number) {
+    const shouldDraw = renderer.prepare();
+    if (shouldDraw) renderer.draw(time);
+    requestAnimationFrame(drawLoop);
 }
+requestAnimationFrame(drawLoop);
+
+// protected setupUI(): void {
+//     const uiId = 'ui';
+//     const ui = document.getElementById(uiId) as HTMLCanvasElement;
+//     this._ui = new UI(ui, true);
+
+//     this._ui.input.select({
+//         label: 'output',
+//         optionValues: Object.keys(FragmentLocation).filter((v) => isNaN(Number(v))),
+//         value: 'Color',
+//         handler: (v) =>
+//             this._renderer.output = FragmentLocation[v.value as keyof typeof FragmentLocation],
+//     });
+// }

@@ -1,4 +1,3 @@
-import { Buffer, Context } from 'webgl-operate';
 import { Base } from '../base';
 import { VertexLocations } from '../locations';
 
@@ -67,24 +66,22 @@ for (let i = 0; i < 3 * 8; i++) {
     colorData.set(white, i * 3);
 }
 
-export function createCube(context: Context): Base {
-    const gl = context.gl as WebGL2RenderingContext;
+export function createCube(gl: WebGL2RenderingContext): Base {
+    const index = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indexData.buffer, gl.STATIC_DRAW);
 
-    const index = new Buffer(context);
-    index.initialize(gl.ELEMENT_ARRAY_BUFFER);
-    index.data(indexData.buffer, gl.STATIC_DRAW);
+    const position = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, position);
+    gl.bufferData(gl.ARRAY_BUFFER, positionData.buffer, gl.STATIC_DRAW);
 
-    const position = new Buffer(context);
-    position.initialize(gl.ARRAY_BUFFER);
-    position.data(positionData.buffer, gl.STATIC_DRAW);
+    const normal = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, normal);
+    gl.bufferData(gl.ARRAY_BUFFER, normalData.buffer, gl.STATIC_DRAW);
 
-    const normal = new Buffer(context);
-    normal.initialize(gl.ARRAY_BUFFER);
-    normal.data(normalData.buffer, gl.STATIC_DRAW);
-
-    const color = new Buffer(context);
-    color.initialize(gl.ARRAY_BUFFER);
-    color.data(colorData.buffer, gl.STATIC_DRAW);
+    const color = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, color);
+    gl.bufferData(gl.ARRAY_BUFFER, colorData.buffer, gl.STATIC_DRAW);
 
     return {
         index,
