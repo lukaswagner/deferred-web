@@ -5,7 +5,6 @@ import PugPlugin from 'pug-plugin';
 import { fileURLToPath } from 'node:url';
 
 const baseDir = dirname(fileURLToPath(import.meta.url));
-const srcDir = resolve(baseDir, 'src');
 const buildDir = resolve(baseDir, 'build');
 
 /**
@@ -13,9 +12,8 @@ const buildDir = resolve(baseDir, 'build');
  */
 export default function () {
     return {
-        context: srcDir,
         entry: {
-            index: './pug/index.pug',
+            index: './pages/index.pug',
         },
         output: {
             clean: true,
