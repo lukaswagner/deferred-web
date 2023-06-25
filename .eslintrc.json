@@ -81,6 +81,8 @@
             "@typescript-eslint/switch-exhaustiveness-check": "warn",
             // correctly format type annotations
             "@typescript-eslint/type-annotation-spacing": "warn",
+            // webgl interface may return null
+            "@typescript-eslint/no-unnecessary-condition": "off",
 
             // ts eslint rules colliding with eslint rules
             // https://typescript-eslint.io/rules/#extension-rules
