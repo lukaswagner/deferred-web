@@ -15,11 +15,17 @@ export class BlitPass extends RenderPass<typeof TrackedMembers> {
         this._readTarget = value;
         this._dirty.set(TrackedMembers.ReadTarget);
     }
+    public get readTarget() {
+        return this._readTarget;
+    }
 
     protected _readBuffer: number;
     public set readBuffer(value: number) {
         this._readBuffer = value;
         this._dirty.set(TrackedMembers.ReadBuffer);
+    }
+    public get readBuffer() {
+        return this._readBuffer;
     }
 
     protected _drawTarget: Framebuffer;
@@ -27,11 +33,17 @@ export class BlitPass extends RenderPass<typeof TrackedMembers> {
         this._drawTarget = value;
         this._dirty.set(TrackedMembers.DrawTarget);
     }
+    public get drawTarget() {
+        return this._drawTarget;
+    }
 
     protected _drawBuffer: number;
     public set drawBuffer(value: number) {
         this._drawBuffer = value;
         this._dirty.set(TrackedMembers.DrawBuffer);
+    }
+    public get drawBuffer() {
+        return this._drawBuffer;
     }
 
     public override initialize(): void { }

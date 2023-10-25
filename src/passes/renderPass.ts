@@ -5,9 +5,15 @@ import { GL } from '../util/gl/gl';
 export abstract class RenderPass<T extends Enum> {
     protected _gl: GL;
     protected _dirty = new Dirty<T>();
+    protected _name: string;
 
-    public constructor(gl: GL) {
+    public constructor(gl: GL, name?: string) {
         this._gl = gl;
+        this._name = name;
+    }
+
+    public get name() {
+        return this._name;
     }
 
     public prepare(): boolean {

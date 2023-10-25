@@ -21,6 +21,12 @@ enum TrackedMembers {
     Size,
 }
 
+type DebugView = {
+    name: string,
+    target: Framebuffer,
+    buffer: number,
+}
+
 export class Renderer {
     protected _gl: WebGL2RenderingContext;
     protected _canvas: HTMLCanvasElement;
@@ -34,6 +40,7 @@ export class Renderer {
 
     protected _passes: RenderPass<any>[] = [];
     protected _geometryPass: GeometryPass;
+    protected _blitPass: BlitPass;
 
     public constructor(gl: WebGL2RenderingContext) {
         this._gl = gl;
@@ -55,19 +62,19 @@ export class Renderer {
             return tex;
         }
 
-        const intermediateFbo = new Framebuffer(this._gl);
+        const intermediateFbo = new Framebuffer(this._gl, "Forward Output");
         const c0 = this._gl.COLOR_ATTACHMENT0;
         intermediateFbo.initialize([
+            { slot: c0 + GeomLocations.Color, texture: tex(Formats.RGBA) },
             { slot: c0 + GeomLocations.WorldPosition, texture: tex(Formats.RGBA16F) },
             { slot: c0 + GeomLocations.WorldNormal, texture: tex(Formats.RGBA16F) },
             { slot: c0 + GeomLocations.ViewPosition, texture: tex(Formats.RGBA16F) },
             { slot: c0 + GeomLocations.ViewNormal, texture: tex(Formats.RGBA16F) },
-            { slot: c0 + GeomLocations.Color, texture: tex(Formats.RGBA) },
             { slot: this._gl.DEPTH_ATTACHMENT, texture: tex(Formats.Depth) },
         ]);
         this._framebuffers.push(intermediateFbo);
 
-        const geomPass = new GeometryPass(this._gl);
+        const geomPass = new GeometryPass(this._gl, "Geometry Forward");
         geomPass.initialize();
         geomPass.target = intermediateFbo;
         geomPass.preDraw = () => {
@@ -84,15 +91,7 @@ export class Renderer {
         blitPass.drawTarget = canvasFbo;
         blitPass.drawBuffer = this._gl.BACK;
         this._passes.push(blitPass);
-
-        // const fullscreenPass = new FullscreenPass(this._gl);
-        // fullscreenPass.initialize();
-        // fullscreenPass.target = canvasFbo;
-        // fullscreenPass.preDraw = () => {
-        //     drawBuffer(this._gl, this._gl.BACK);
-        //     canvasFbo.clear();
-        // };
-        // this._passes.push(fullscreenPass);
+        this._blitPass = blitPass;
 
         this._resize();
         this._watchResize();
@@ -171,5 +170,39 @@ export class Renderer {
     public addGeometry(geometry: Geometry) {
         if(!this._geometryPass) return;
         this._geometryPass.addGeometry(geometry);
+    }
+
+
+    public getDebugViews() {
+        const views = new Array<DebugView>();
+        views.push({
+            name: 'Default',
+            target: this._blitPass.readTarget,
+            buffer: this._blitPass.readBuffer,
+        })
+
+        this._framebuffers
+            .filter((f) => !(f instanceof CanvasFramebuffer))
+            .forEach((f, fi) => {
+                f.attachments
+                    .filter((a) =>
+                        a.slot >= this._gl.COLOR_ATTACHMENT0 &&
+                        a.slot <= this._gl.COLOR_ATTACHMENT15)
+                    .sort((a, b) => a.slot - b.slot)
+                    .forEach((a) => {
+                        views.push({
+                            name: `[${fi}] ${f.name}: ${a.slot - this._gl.COLOR_ATTACHMENT0}`,
+                            target: f,
+                            buffer: a.slot,
+                        });
+                })
+            });
+
+        return views;
+    }
+
+    public setDebugView(debugView: DebugView) {
+        this._blitPass.readTarget = debugView.target;
+        this._blitPass.readBuffer = debugView.buffer;
     }
 }

@@ -1,6 +1,7 @@
 import { Camera } from './util/camera';
 import { Renderer } from './renderer';
 import { Navigation } from './util/navigation';
+import { UI } from '@lukaswagner/web-ui';
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const contextAttributes: WebGLContextAttributes = { antialias: false, alpha: false };
@@ -13,6 +14,7 @@ new Navigation(canvas, camera);
 const renderer = new Renderer(gl);
 renderer.camera = camera;
 renderer.initialize();
+setupUI();
 renderer.spawnDebugScene();
 
 function drawLoop(time: number) {
@@ -22,16 +24,16 @@ function drawLoop(time: number) {
 }
 requestAnimationFrame(drawLoop);
 
-// protected setupUI(): void {
-//     const uiId = 'ui';
-//     const ui = document.getElementById(uiId) as HTMLCanvasElement;
-//     this._ui = new UI(ui, true);
+function setupUI() {
+    const uiId = 'ui';
+    const element = document.getElementById(uiId) as HTMLCanvasElement;
+    const ui = new UI(element, true);
 
-//     this._ui.input.select({
-//         label: 'output',
-//         optionValues: Object.keys(FragmentLocation).filter((v) => isNaN(Number(v))),
-//         value: 'Color',
-//         handler: (v) =>
-//             this._renderer.output = FragmentLocation[v.value as keyof typeof FragmentLocation],
-//     });
-// }
+    const debugViews = renderer.getDebugViews();
+    ui.input.select({
+        label: 'output',
+        optionValues: debugViews.map((d) => d.name),
+        handler: (v) => renderer.setDebugView(debugViews[v.index]),
+        handleOnInit: false,
+    });
+}

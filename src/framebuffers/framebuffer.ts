@@ -15,9 +15,15 @@ export class Framebuffer {
     protected _attachments: Attachment[];
     protected _doubleBuffered: number[] = [];
     protected _size = vec2.fromValues(1, 1);
+    protected _name: string;
 
-    public constructor(gl: GL) {
+    public constructor(gl: GL, name?: string) {
         this._gl = gl;
+        this._name = name;
+    }
+
+    public get name() {
+        return this._name;
     }
 
     protected _attach(attachment: Attachment) {
@@ -99,5 +105,9 @@ export class Framebuffer {
         this._size = v;
         for (const attachment of this._attachments)
             attachment.texture.resize(this._size);
+    }
+
+    public get attachments() {
+        return this._attachments;
     }
 }
