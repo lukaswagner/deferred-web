@@ -1,4 +1,4 @@
-import { Buffer, Context, mat4, vec3 } from 'webgl-operate';
+import { mat4, vec3 } from 'gl-matrix';
 import { BufferInfo } from '../bufferInfo';
 import { Instance } from '../instance';
 import { VertexLocations } from '../locations';
@@ -17,8 +17,7 @@ const defaults: Options = {
     colors: false,
 };
 
-export function create3dGrid(context: Context, options?: Options): Instance {
-    const gl = context.gl as WebGL2RenderingContext;
+export function create3dGrid(gl: WebGL2RenderingContext, options?: Options): Instance {
     const opt = Object.assign({}, defaults, options);
 
     // halfWidth = step * (count - 1) / 2
@@ -42,16 +41,14 @@ export function create3dGrid(context: Context, options?: Options): Instance {
     const count = opt.count!;
     const total = count[0] * count[1] * count[2];
 
-    const matrix = new Buffer(context, 'buf:3dGridMatrix');
-    matrix.initialize(gl.ARRAY_BUFFER);
+    const matrix = gl.createBuffer();
     const matrixData = new Float32Array(16 * total);
 
-    let color: Buffer;
+    let color: WebGLBuffer;
     let colorData: Float32Array;
-    const colors = opt.colors !== undefined;
+    const colors = opt.colors;
     if (colors) {
-        color = new Buffer(context, 'buf:3dGridColor');
-        color.initialize(gl.ARRAY_BUFFER);
+        color = gl.createBuffer();
         colorData = new Float32Array(3 * total);
     }
 
@@ -62,7 +59,6 @@ export function create3dGrid(context: Context, options?: Options): Instance {
                 const mat = mat4.fromTranslation(mat4.create(), pos);
                 const index = x * count[1] * count[2] + y * count[2] + z;
                 matrixData.set(mat, index * 16);
-                // @ts-expect-error ts(2454) is reported incorrectly
                 if (colors) colorData.set(
                     [x / (count[0] - 1), y / (count[1] - 1), z / (count[2] - 1)],
                     index * 3);
@@ -70,9 +66,15 @@ export function create3dGrid(context: Context, options?: Options): Instance {
         }
     }
 
-    matrix.data(matrixData.buffer, gl.STATIC_DRAW);
-    // @ts-expect-error ts(2454) is reported incorrectly
-    if (colors) color.data(colorData.buffer, gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER, matrix);
+    gl.bufferData(gl.ARRAY_BUFFER, matrixData.buffer, gl.STATIC_DRAW);
+
+    if (colors) {
+        gl.bindBuffer(gl.ARRAY_BUFFER, color);
+        gl.bufferData(gl.ARRAY_BUFFER, colorData.buffer, gl.STATIC_DRAW);
+    }
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
     const baseBuffer: BufferInfo = {
         buffer: matrix,
@@ -88,7 +90,6 @@ export function create3dGrid(context: Context, options?: Options): Instance {
             { stride: 64, offset: i * 16, location: VertexLocations.instanceMatrix + i }),
     );
     if (colors) buffers.push({
-    // @ts-expect-error ts(2454) is reported incorrectly
         buffer: color,
         location: VertexLocations.instanceColor,
         size: 3,

@@ -1,17 +1,19 @@
 import { Camera } from './util/camera';
 import { Renderer } from './renderer';
+import { Navigation } from './util/navigation';
 
-const canvas = document.getElementById('webgl-canvas') as HTMLCanvasElement;
+const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const contextAttributes: WebGLContextAttributes = { antialias: false, alpha: false };
 const gl = canvas.getContext('webgl2', contextAttributes);
 if (!gl) throw new Error('Could not acquire WebGL context');
 
 const camera = new Camera();
+new Navigation(canvas, camera);
 
 const renderer = new Renderer(gl);
 renderer.camera = camera;
 renderer.initialize();
-// renderer.spawnDebugScene();
+renderer.spawnDebugScene();
 
 function drawLoop(time: number) {
     const shouldDraw = renderer.prepare();

@@ -14,4 +14,5 @@ export interface Geometry {
     instance?: Instance;
     colorMode?: ColorMode;
     model?: mat4;
+    vao?: WebGLVertexArrayObject;
 }

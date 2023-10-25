@@ -9,7 +9,7 @@ export class Camera {
         this._timestamp = performance.now();
     }
 
-    protected _eye = vec3.fromValues(0, 0, 1);
+    protected _eye = vec3.fromValues(0, 0, 5);
     public get eye() {
         return this._eye;
     }
@@ -54,7 +54,7 @@ export class Camera {
         this._updateTimestamp();
     }
 
-    protected _near = 0.125;
+    protected _near = 0.25;
     public get near() {
         return this._near;
     }

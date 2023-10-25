@@ -1,3 +1,4 @@
+#version 300 es
 precision mediump float;
 
 layout(location = WORLD_POSITION_LOCATION) out vec4 f_worldPosition;

@@ -3,19 +3,27 @@ import { CameraPass } from '../cameraPass';
 import { RenderPass } from '../renderPass';
 import { Uniforms } from '../../util/uniforms';
 import { mat4 } from 'gl-matrix';
+import { Framebuffer } from '../../framebuffers/framebuffer';
+import { drawBuffers } from '../../util/gl/drawBuffers';
 
 enum Dirty {
     Target,
     View,
     Projection,
+    Geometry,
 }
 
-export class PointPass extends RenderPass<typeof Dirty> implements CameraPass {
-    protected _count: number;
+export enum FragmentLocation {
+    Color,
+    WorldPosition,
+    WorldNormal,
+    ViewPosition,
+    ViewNormal,
+}
 
-    protected _buffer: WebGLBuffer;
+export class GeometryPass extends RenderPass<typeof Dirty> implements CameraPass {
     protected _program: WebGLProgram;
-    protected _target: WebGLFramebuffer;
+    protected _target: Framebuffer;
 
     protected _uniforms: Uniforms;
 
@@ -25,19 +33,34 @@ export class PointPass extends RenderPass<typeof Dirty> implements CameraPass {
     protected _instanced: boolean;
     protected _colorMode: ColorMode;
 
+    protected _geometries: Geometry[] = [];
+
     public initialize() {
         const vert = this._gl.createShader(this._gl.VERTEX_SHADER);
         const vertSrc = require('./geometry.vert') as string;
         this._gl.shaderSource(vert, vertSrc);
+        this._gl.compileShader(vert);
+        if(!this._gl.getShaderParameter(vert, this._gl.COMPILE_STATUS))
+            console.log(this._gl.getShaderInfoLog(vert));
 
         const frag = this._gl.createShader(this._gl.FRAGMENT_SHADER);
-        const fragSrc = require('./geometry.frag') as string;
+        let fragSrc = require('./geometry.frag') as string;
+        fragSrc = fragSrc.replaceAll('WORLD_POSITION_LOCATION', FragmentLocation.WorldPosition.toString());
+        fragSrc = fragSrc.replaceAll('WORLD_NORMAL_LOCATION', FragmentLocation.WorldNormal.toString());
+        fragSrc = fragSrc.replaceAll('VIEW_POSITION_LOCATION', FragmentLocation.ViewPosition.toString());
+        fragSrc = fragSrc.replaceAll('VIEW_NORMAL_LOCATION', FragmentLocation.ViewNormal.toString());
+        fragSrc = fragSrc.replaceAll('COLOR_LOCATION', FragmentLocation.Color.toString());
         this._gl.shaderSource(frag, fragSrc);
+        this._gl.compileShader(frag);
+        if(!this._gl.getShaderParameter(frag, this._gl.COMPILE_STATUS))
+            console.log(this._gl.getShaderInfoLog(frag));
 
         this._program = this._gl.createProgram();
         this._gl.attachShader(this._program, vert);
         this._gl.attachShader(this._program, frag);
         this._gl.linkProgram(this._program);
+        if(!this._gl.getProgramParameter(this._program, this._gl.LINK_STATUS))
+            console.log(this._gl.getProgramInfoLog(this._program));
 
         this._uniforms = new Uniforms(this._gl, this._program);
 
@@ -61,34 +84,70 @@ export class PointPass extends RenderPass<typeof Dirty> implements CameraPass {
         return super.prepare();
     }
 
-    public draw(geom: Geometry): void {
-        this._gl.bindFramebuffer(this._gl.DRAW_FRAMEBUFFER, this._target);
+    protected _setup(): void {
+        this._target.bind();
         this._gl.useProgram(this._program);
+    }
 
-        const indexed = geom.base.index !== undefined;
-        const instanced = geom.instance !== undefined;
+    protected _draw(): void {
+        this._geometries.forEach((g) => this._drawGeometry(g));
+    }
+
+    protected _tearDown(): void {
+        this._target.unbind();
+        this._gl.useProgram(null);
+    }
+
+    private _drawGeometry(geometry: Geometry) {
+        if(!geometry.vao) this._setupRenderData(geometry);
+        this._gl.bindVertexArray(geometry.vao);
+
+        const indexed = geometry.base.index !== undefined;
+        const instanced = geometry.instance !== undefined;
+        const base = geometry.base;
+        const instance = geometry.instance!;
+
+        if (indexed) {
+            if (instanced) this._gl.drawElementsInstanced(
+                base.mode, base.count, base.indexType!, 0, instance.count);
+            else this._gl.drawElements(
+                base.mode, base.count, base.indexType!, 0);
+        } else {
+            if (instanced) this._gl.drawArraysInstanced(
+                base.mode, 0, base.count, instance.count);
+            else this._gl.drawArrays(
+                base.mode, 0, base.count);
+        }
+
+        this._gl.bindVertexArray(undefined);
+    }
+
+    private _setupRenderData(geometry: Geometry) {
+        const vao = this._gl.createVertexArray();
+        this._gl.bindVertexArray(vao);
+
+        const indexed = geometry.base.index !== undefined;
+        const instanced = geometry.instance !== undefined;
 
         if (instanced !== this._instanced) {
             this._instanced = instanced;
             this._gl.uniform1i(this._uniforms.get('u_instanced'), +this._instanced);
         }
 
-        if (instanced) {
-            const colorMode = geom.colorMode ?? ColorMode.BaseOnly;
-            if (colorMode !== this._colorMode) {
-                this._colorMode = colorMode;
-                this._gl.uniform1i(this._uniforms.get('u_colorMode'), this._colorMode);
-            }
+        const colorMode = instanced && geometry.colorMode ? geometry.colorMode : ColorMode.BaseOnly;
+        if (colorMode !== this._colorMode) {
+            this._colorMode = colorMode;
+            this._gl.uniform1i(this._uniforms.get('u_colorMode'), this._colorMode);
         }
 
-        const model = geom.model ?? mat4.create();
-        if (!mat4.equals(model, this._model)) {
+        const model = geometry.model ?? mat4.create();
+        if (!this._model || !mat4.equals(model, this._model)) {
             this._model = model;
             this._gl.uniformMatrix4fv(this._uniforms.get('u_model'), false, this._model);
         }
 
-        const base = geom.base;
-        const inst = geom.instance!;
+        const base = geometry.base;
+        const instance = geometry.instance!;
 
         if (indexed) this._gl.bindBuffer(this._gl.ELEMENT_ARRAY_BUFFER, base.index);
 
@@ -100,7 +159,7 @@ export class PointPass extends RenderPass<typeof Dirty> implements CameraPass {
         });
         if (instanced) {
             base.buffers.forEach((b) => this._gl.vertexAttribDivisor(b.location, b.divisor));
-            inst.buffers.forEach((b) => {
+            instance.buffers.forEach((b) => {
                 this._gl.bindBuffer(this._gl.ARRAY_BUFFER, b.buffer);
                 this._gl.vertexAttribPointer(b.location, b.size, b.type, false, b.stride, b.offset);
                 this._gl.enableVertexAttribArray(b.location);
@@ -109,35 +168,11 @@ export class PointPass extends RenderPass<typeof Dirty> implements CameraPass {
             });
         }
 
-        if (indexed) {
-            if (instanced) this._gl.drawElementsInstanced(
-                base.mode, base.count, base.indexType!, 0, inst.count);
-            else this._gl.drawElements(
-                base.mode, base.count, base.indexType!, 0);
-        } else {
-            if (instanced) this._gl.drawArraysInstanced(
-                base.mode, 0, base.count, inst.count);
-            else this._gl.drawArrays(
-                base.mode, 0, base.count);
-        }
-
-        if (instanced) inst.buffers.forEach((b) => {
-            this._gl.bindBuffer(this._gl.ARRAY_BUFFER, b.buffer);
-            this._gl.disableVertexAttribArray(b.location);
-            this._gl.bindBuffer(this._gl.ARRAY_BUFFER, null);
-        });
-        base.buffers.forEach((b) => {
-            this._gl.bindBuffer(this._gl.ARRAY_BUFFER, b.buffer);
-            this._gl.disableVertexAttribArray(b.location);
-            this._gl.bindBuffer(this._gl.ARRAY_BUFFER, null);
-        });
-
-
-        this._gl.bindFramebuffer(this._gl.DRAW_FRAMEBUFFER, null);
-        this._gl.useProgram(null);
+        geometry.vao = vao;
+        this._gl.bindVertexArray(undefined);
     }
 
-    public set target(v: WebGLFramebuffer) {
+    public set target(v: Framebuffer) {
         this._target = v;
         this._dirty.set(Dirty.Target);
     }
@@ -150,5 +185,10 @@ export class PointPass extends RenderPass<typeof Dirty> implements CameraPass {
     public set projection(v: mat4) {
         this._projection = v;
         this._dirty.set(Dirty.Projection);
+    }
+
+    public addGeometry(v: Geometry) {
+        this._geometries.push(v);
+        this._dirty.set(Dirty.Geometry);
     }
 }

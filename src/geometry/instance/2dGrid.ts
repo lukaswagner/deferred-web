@@ -54,7 +54,7 @@ export function create2dGrid(gl: WebGL2RenderingContext, options?: Options): Ins
 
     const matrixData = new Float32Array(16 * count[0] * count[1]);
 
-    const colors = opt.colors !== undefined;
+    const colors = opt.colors;
     let colorData: Float32Array;
     if (colors) {
         colorData = new Float32Array(3 * count[0] * count[1]);
@@ -76,7 +76,7 @@ export function create2dGrid(gl: WebGL2RenderingContext, options?: Options): Ins
 
     let color: WebGLBuffer;
     if (colors) {
-        const color = gl.createBuffer();
+        color = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, color);
         gl.bufferData(gl.ARRAY_BUFFER, colorData.buffer, gl.STATIC_DRAW);
     }

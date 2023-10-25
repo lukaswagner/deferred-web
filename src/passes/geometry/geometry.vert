@@ -1,3 +1,4 @@
+#version 300 es
 precision mediump float;
 
 in vec3 a_basePosition;
@@ -7,7 +8,8 @@ in mat4 a_instanceMatrix;
 in vec3 a_instanceColor;
 
 uniform mat4 u_model;
-uniform mat4 u_viewProjection;
+uniform mat4 u_view;
+uniform mat4 u_projection;
 uniform bool u_instanced;
 uniform int u_colorMode;
 
@@ -51,8 +53,8 @@ void main()
     v_worldNormal = u_model * v_worldNormal;
     v_worldNormal = normalize(v_worldNormal);
 
-    v_viewPosition = u_viewProjection * v_worldPosition;
-    v_viewNormal = u_viewProjection * v_worldNormal;
+    v_viewPosition = u_projection * u_view * v_worldPosition;
+    v_viewNormal = u_projection * u_view * v_worldNormal;
     v_viewNormal = normalize(v_viewNormal);
 
     gl_Position = v_viewPosition;
