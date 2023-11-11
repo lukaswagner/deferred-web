@@ -6,11 +6,11 @@ import { mat4 } from 'gl-matrix';
 import { Framebuffer } from '../../framebuffers/framebuffer';
 import { drawBuffers } from '../../util/gl/drawBuffers';
 
-enum Dirty {
-    Target,
-    View,
-    Projection,
-    Geometry,
+interface Tracked {
+    Target: any;
+    View: any;
+    Projection: any;
+    Geometry: any;
 }
 
 export enum FragmentLocation {
@@ -21,7 +21,7 @@ export enum FragmentLocation {
     ViewNormal,
 }
 
-export class GeometryPass extends RenderPass<typeof Dirty> implements CameraPass {
+export class GeometryPass extends RenderPass<Tracked> implements CameraPass {
     protected _program: WebGLProgram;
     protected _target: Framebuffer;
 
@@ -69,12 +69,12 @@ export class GeometryPass extends RenderPass<typeof Dirty> implements CameraPass
     }
 
     public prepare(): boolean {
-        if (this._dirty.get(Dirty.View)) {
+        if (this._dirty.get('View')) {
             this._gl.useProgram(this._program);
             this._gl.uniformMatrix4fv(this._uniforms.get('u_view'), false, this._view);
         }
 
-        if (this._dirty.get(Dirty.Projection)) {
+        if (this._dirty.get('Projection')) {
             this._gl.useProgram(this._program);
             this._gl.uniformMatrix4fv(this._uniforms.get('u_projection'), false, this._projection);
         }
@@ -174,21 +174,21 @@ export class GeometryPass extends RenderPass<typeof Dirty> implements CameraPass
 
     public set target(v: Framebuffer) {
         this._target = v;
-        this._dirty.set(Dirty.Target);
+        this._dirty.set('Target');
     }
 
     public set view(v: mat4) {
         this._view = v;
-        this._dirty.set(Dirty.View);
+        this._dirty.set('View');
     }
 
     public set projection(v: mat4) {
         this._projection = v;
-        this._dirty.set(Dirty.Projection);
+        this._dirty.set('Projection');
     }
 
     public addGeometry(v: Geometry) {
         this._geometries.push(v);
-        this._dirty.set(Dirty.Geometry);
+        this._dirty.set('Geometry');
     }
 }

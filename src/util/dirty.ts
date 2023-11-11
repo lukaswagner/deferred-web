@@ -1,16 +1,18 @@
-import { Enum } from './enum';
-
-export class Dirty<T extends Enum> {
-    protected _map = new Map<keyof T, boolean>();
+export class Dirty<T> {
+    protected _map: {[K in keyof T]: boolean};
     protected _any = false;
 
-    public set(key: T[keyof T]) {
-        this._map.set(key, true);
+    constructor() {
+        this._map = {} as typeof this._map;
+    }
+
+    public set(key: keyof T) {
+        this._map[key] = true;
         this._any = true;
     }
 
-    public get(key: T[keyof T]) {
-        return this._map.get(key) ?? false;
+    public get(key: keyof T) {
+        return this._map[key] ?? false;
     }
 
     public any() {
@@ -18,12 +20,12 @@ export class Dirty<T extends Enum> {
     }
 
     public reset() {
-        for (const key of this._map.keys()) this._map.set(key, false);
+        for (const key in this._map) this._map[key] = false;
         this._any = false;
     }
 
     public setAll() {
-        for (const key of this._map.keys()) this._map.set(key, true);
+        for (const key in this._map) this._map[key] = true;
         this._any = true;
     }
 }

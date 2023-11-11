@@ -1,29 +1,25 @@
-import { ColorMode, Geometry } from '../../geometry/geometry';
-import { CameraPass } from '../cameraPass';
 import { RenderPass } from '../renderPass';
 import { Uniforms } from '../../util/uniforms';
-import { mat4 } from 'gl-matrix';
 import { Framebuffer } from '../../framebuffers/framebuffer';
-import { drawBuffer, drawBuffers } from '../../util/gl/drawBuffers';
-import { BufferInfo } from '../../geometry/bufferInfo';
 
-enum Dirty {
-    Target,
-    View,
-    Projection,
-    Geometry,
+interface Tracked {
+    Target: any
 }
 
 export enum FragmentLocation {
     Color,
 }
 
-export class FullscreenPass extends RenderPass<typeof Dirty> {
+export class FullscreenPass<T extends Tracked = Tracked> extends RenderPass<T> {
     protected _buffer: WebGLBuffer;
     protected _program: WebGLProgram;
     protected _target: Framebuffer;
 
     protected _uniforms: Uniforms;
+
+    public constructor(gl: WebGL2RenderingContext, name?: string) {
+        super(gl, name);
+    }
 
     public initialize(fragSrc?: string) {
         const vert = this._gl.createShader(this._gl.VERTEX_SHADER);
@@ -84,6 +80,6 @@ export class FullscreenPass extends RenderPass<typeof Dirty> {
 
     public set target(v: Framebuffer) {
         this._target = v;
-        this._dirty.set(Dirty.Target);
+        this._dirty.set('Target');
     }
 }

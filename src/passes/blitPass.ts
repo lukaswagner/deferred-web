@@ -2,18 +2,22 @@ import { Framebuffer } from '../framebuffers/framebuffer';
 import { RenderPass } from './renderPass';
 import { drawBuffer } from '../util/gl/drawBuffers';
 
-enum TrackedMembers {
-    ReadTarget,
-    ReadBuffer,
-    DrawTarget,
-    DrawBuffer,
+interface Tracked {
+    ReadTarget: any;
+    ReadBuffer: any;
+    DrawTarget: any;
+    DrawBuffer: any;
 }
 
-export class BlitPass extends RenderPass<typeof TrackedMembers> {
+export class BlitPass extends RenderPass<Tracked> {
+    public constructor(gl: WebGL2RenderingContext, name?: string) {
+        super(gl, name);
+    }
+
     protected _readTarget: Framebuffer;
     public set readTarget(value: Framebuffer) {
         this._readTarget = value;
-        this._dirty.set(TrackedMembers.ReadTarget);
+        this._dirty.set('ReadTarget');
     }
     public get readTarget() {
         return this._readTarget;
@@ -22,7 +26,7 @@ export class BlitPass extends RenderPass<typeof TrackedMembers> {
     protected _readBuffer: number;
     public set readBuffer(value: number) {
         this._readBuffer = value;
-        this._dirty.set(TrackedMembers.ReadBuffer);
+        this._dirty.set('ReadBuffer');
     }
     public get readBuffer() {
         return this._readBuffer;
@@ -31,7 +35,7 @@ export class BlitPass extends RenderPass<typeof TrackedMembers> {
     protected _drawTarget: Framebuffer;
     public set drawTarget(value: Framebuffer) {
         this._drawTarget = value;
-        this._dirty.set(TrackedMembers.DrawTarget);
+        this._dirty.set('DrawTarget');
     }
     public get drawTarget() {
         return this._drawTarget;
@@ -40,7 +44,7 @@ export class BlitPass extends RenderPass<typeof TrackedMembers> {
     protected _drawBuffer: number;
     public set drawBuffer(value: number) {
         this._drawBuffer = value;
-        this._dirty.set(TrackedMembers.DrawBuffer);
+        this._dirty.set('DrawBuffer');
     }
     public get drawBuffer() {
         return this._drawBuffer;

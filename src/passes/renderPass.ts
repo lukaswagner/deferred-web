@@ -1,14 +1,14 @@
 import { Dirty } from '../util/dirty';
-import { Enum } from '../util/enum';
 import { GL } from '../util/gl/gl';
 
-export abstract class RenderPass<T extends Enum> {
+export abstract class RenderPass<T> {
     protected _gl: GL;
-    protected _dirty = new Dirty<T>();
+    protected _dirty: Dirty<T>;
     protected _name: string;
 
     public constructor(gl: GL, name?: string) {
         this._gl = gl;
+        this._dirty = new Dirty();
         this._name = name;
     }
 

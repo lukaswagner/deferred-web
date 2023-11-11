@@ -1,24 +1,21 @@
 import { Camera } from './util/camera';
 import { RenderPass } from './passes/renderPass';
 import { isCameraPass } from './passes/cameraPass';
-import { Attachment, Framebuffer } from './framebuffers/framebuffer';
+import { Framebuffer } from './framebuffers/framebuffer';
 import { Texture } from './util/gl/texture';
 import { Formats, TextureFormat } from './util/gl/formats';
-import { GeometryPass, FragmentLocation as GeomLocations } from './passes/geometry/geometryPass';
+import { GeometryPass, FragmentLocation as GeomLocations } from './passes/geometry';
 import { CanvasFramebuffer } from './framebuffers/canvasFramebuffer';
 import { BlitPass } from './passes/blitPass';
 import { mat4, vec2 } from 'gl-matrix';
 import { ColorMode, Geometry } from './geometry/geometry';
 import { createCube } from './geometry/base/cube';
 import { create3dGrid } from './geometry/instance/3dGrid';
-import { create2dGrid } from './geometry/instance/2dGrid';
-import { createTriangle } from './geometry/base/triangle';
 import { Dirty } from './util/dirty';
-import { drawBuffer, drawBuffers } from './util/gl/drawBuffers';
-import { FullscreenPass } from './passes/fullscreenPass/fullscreenPass';
+import { drawBuffers } from './util/gl/drawBuffers';
 
-enum TrackedMembers {
-    Size,
+interface TrackedMembers {
+    Size: any,
 }
 
 type DebugView = {
@@ -33,7 +30,7 @@ export class Renderer {
     protected _resizeObserver: ResizeObserver;
     protected _size: vec2;
 
-    protected _dirty = new Dirty<typeof TrackedMembers>();
+    protected _dirty = new Dirty<TrackedMembers>();
     protected _camera: Camera;
     protected _framebuffers: Framebuffer[] = [];
     protected _lastFrame = 0;
@@ -102,7 +99,7 @@ export class Renderer {
     public prepare(): boolean {
         let shouldRun = this._dirty.any();
 
-        if (this._dirty.get(TrackedMembers.Size)) {
+        if (this._dirty.get('Size')) {
             this._gl.viewport(0, 0, this._size[0], this._size[1]);
             for (const fbo of this._framebuffers) {
                 fbo.size = this._size;
@@ -142,7 +139,7 @@ export class Renderer {
 
         this._size = newSize;
         this._camera.aspect = this._size[0] / this._size[1];
-        this._dirty.set(TrackedMembers.Size);
+        this._dirty.set('Size');
     }
 
     protected _watchResize() {
