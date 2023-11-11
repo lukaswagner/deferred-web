@@ -51,82 +51,101 @@ export class Renderer {
             return;
         }
 
-        const tex = (format: TextureFormat) => {
-            const tex = new Texture(this._gl);
-            tex.initialize(format);
-            return tex;
-        }
-
-        // FORWARD
-        const geomFbo = new Framebuffer(this._gl, "Forward");
-        const c0 = this._gl.COLOR_ATTACHMENT0;
-        const geomColor = tex(Formats.RGBA);
-        const geomPosition = tex(Formats.RGBA16F);
-        const geomNormal = tex(Formats.RGBA16F);
-        geomFbo.initialize([
-            { slot: c0 + GeomLocations.Color, texture: geomColor },
-            { slot: c0 + GeomLocations.WorldPosition, texture: geomPosition },
-            { slot: c0 + GeomLocations.WorldNormal, texture: geomNormal },
-            { slot: c0 + GeomLocations.ViewPosition, texture: tex(Formats.RGBA16F) },
-            { slot: c0 + GeomLocations.ViewNormal, texture: tex(Formats.RGBA16F) },
-            { slot: this._gl.DEPTH_ATTACHMENT, texture: tex(Formats.Depth) },
-        ]);
-        this._framebuffers.push(geomFbo);
-
-        const geomPass = new GeometryPass(this._gl, "Geometry Forward");
-        geomPass.initialize();
-        geomPass.target = geomFbo;
-        geomPass.preDraw = () => {
-            drawBuffers(this._gl, 0b11111);
-            geomFbo.clear(false, false);
-        };
-        this._passes.push(geomPass);
-        this._geometryPass = geomPass;
-
-        // SHADING
-        const lightFbo = new Framebuffer(this._gl, "Shading");
-        lightFbo.initialize([
-            { slot: c0 + DirLightLocations.Color, texture: tex(Formats.RGBA) },
-        ]);
-        this._framebuffers.push(lightFbo);
-
-        const dirLightPass = new DirectionalLightPass(this._gl, "Directional Light");
-        dirLightPass.initialize({ count: 1 });
-        dirLightPass.data = {
-            dir: [[-2, -5, -1]],
-            color: [[1, 1, 1]],
-        }
-
-        geomColor.minFilter = this._gl.NEAREST;
-        geomColor.magFilter = this._gl.NEAREST;
-        dirLightPass.color = geomColor;
-        geomPosition.minFilter = this._gl.NEAREST;
-        geomPosition.magFilter = this._gl.NEAREST;
-        dirLightPass.position = geomPosition;
-        geomNormal.minFilter = this._gl.NEAREST;
-        geomNormal.magFilter = this._gl.NEAREST;
-        dirLightPass.normal = geomNormal;
-
-        dirLightPass.target = lightFbo;
-        dirLightPass.preDraw = () => drawBuffers(this._gl, 0b1);
-        this._passes.push(dirLightPass);
-
-        // OUTPUT
         const canvasFbo = CanvasFramebuffer.getInstance(this._gl);
         this._framebuffers.push(canvasFbo);
 
-        const blitPass = new BlitPass(this._gl);
-        blitPass.readTarget = lightFbo;
-        blitPass.readBuffer = c0 + DirLightLocations.Color;
-        blitPass.drawTarget = canvasFbo;
-        blitPass.drawBuffer = this._gl.BACK;
-        this._passes.push(blitPass);
-        this._blitPass = blitPass;
+        const geom = this.setupGeometryBuffer();
+        this.setupGeometryPass(geom.fbo);
+        const lightFbo = this.setupLightBuffer();
+        this.setupDirLightPass(lightFbo, geom.color, geom.position, geom.normal);
+        this.setupBlitPass(
+            lightFbo, this._gl.COLOR_ATTACHMENT0 + DirLightLocations.Color,
+            canvasFbo, this._gl.BACK
+        );
 
         this._resize();
         this._watchResize();
 
         this._gl.enable(this._gl.DEPTH_TEST);
+    }
+
+    private setupGeometryBuffer() {
+        const fbo = new Framebuffer(this._gl, "Forward");
+        const c0 = this._gl.COLOR_ATTACHMENT0;
+        const color = this.createTex(Formats.RGBA);
+        const position = this.createTex(Formats.RGBA16F);
+        const normal = this.createTex(Formats.RGBA16F);
+        fbo.initialize([
+            { slot: c0 + GeomLocations.Color, texture: color },
+            { slot: c0 + GeomLocations.WorldPosition, texture: position },
+            { slot: c0 + GeomLocations.WorldNormal, texture: normal },
+            { slot: c0 + GeomLocations.ViewPosition, texture: this.createTex(Formats.RGBA16F) },
+            { slot: c0 + GeomLocations.ViewNormal, texture: this.createTex(Formats.RGBA16F) },
+            { slot: this._gl.DEPTH_ATTACHMENT, texture: this.createTex(Formats.Depth) },
+        ]);
+        this._framebuffers.push(fbo);
+        return { fbo, color, position, normal };
+    }
+
+    private setupGeometryPass(target: Framebuffer) {
+        const geomPass = new GeometryPass(this._gl, "Geometry Forward");
+        geomPass.initialize();
+        geomPass.target = target;
+        geomPass.preDraw = () => {
+            drawBuffers(this._gl, 0b11111);
+            target.clear(false, false);
+        };
+        this._passes.push(geomPass);
+        this._geometryPass = geomPass;
+    }
+
+    private setupLightBuffer() {
+        const lightFbo = new Framebuffer(this._gl, "Shading");
+        const c0 = this._gl.COLOR_ATTACHMENT0;
+        lightFbo.initialize([
+            { slot: c0 + DirLightLocations.Color, texture: this.createTex(Formats.RGBA) },
+        ]);
+        this._framebuffers.push(lightFbo);
+        return lightFbo;
+    }
+
+    private setupDirLightPass(target: Framebuffer, color: Texture, position: Texture, normal: Texture) {
+        const dirLightPass = new DirectionalLightPass(this._gl, "Directional Light");
+        dirLightPass.initialize({ count: 1 });
+        dirLightPass.data = {
+            dir: [[-2, -5, -1]],
+            color: [[1, 1, 1]],
+        };
+        dirLightPass.target = target;
+
+        color.minFilter = this._gl.NEAREST;
+        color.magFilter = this._gl.NEAREST;
+        dirLightPass.color = color;
+        position.minFilter = this._gl.NEAREST;
+        position.magFilter = this._gl.NEAREST;
+        dirLightPass.position = position;
+        normal.minFilter = this._gl.NEAREST;
+        normal.magFilter = this._gl.NEAREST;
+        dirLightPass.normal = normal;
+
+        dirLightPass.preDraw = () => drawBuffers(this._gl, 0b1);
+        this._passes.push(dirLightPass);
+    }
+
+    private setupBlitPass(srcFbo: Framebuffer, srcBuffer: GLenum, dstFbo: Framebuffer, dstBuffer: GLenum) {
+        const blitPass = new BlitPass(this._gl);
+        blitPass.readTarget = srcFbo;
+        blitPass.readBuffer = srcBuffer;
+        blitPass.drawTarget = dstFbo;
+        blitPass.drawBuffer = dstBuffer;
+        this._passes.push(blitPass);
+        this._blitPass = blitPass;
+    }
+
+    protected createTex(format: TextureFormat) {
+        const tex = new Texture(this._gl);
+        tex.initialize(format);
+        return tex;
     }
 
     public prepare(): boolean {
@@ -201,7 +220,6 @@ export class Renderer {
         if(!this._geometryPass) return;
         this._geometryPass.addGeometry(geometry);
     }
-
 
     public getDebugViews() {
         const views = new Array<DebugView>();
