@@ -18,6 +18,7 @@ in vec2 v_uv;
 
 void main()
 {
+#if ENABLED
     vec3 normal = normalize(texture(u_normal, v_uv).xyz);
 
     vec3 light;
@@ -28,4 +29,7 @@ void main()
     }
 
     fragColor = vec4(light * texture(u_color, v_uv).rgb, 1);
+#else
+    fragColor = vec4(0);
+#endif
 }

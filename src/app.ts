@@ -2,6 +2,7 @@ import { Camera } from './util/camera';
 import { Renderer } from './renderer';
 import { Navigation } from './util/navigation';
 import { UI } from '@lukaswagner/web-ui';
+import { createDebugScene } from './scene';
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const contextAttributes: WebGLContextAttributes = { antialias: false, alpha: false };
@@ -15,7 +16,8 @@ const renderer = new Renderer(gl);
 renderer.camera = camera;
 renderer.initialize();
 setupUI();
-renderer.spawnDebugScene();
+const scene = createDebugScene(gl);
+renderer.scene = scene;
 
 function drawLoop(time: number) {
     const shouldDraw = renderer.prepare();

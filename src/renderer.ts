@@ -14,6 +14,7 @@ import { create3dGrid } from './geometry/instance/3dGrid';
 import { Dirty } from './util/dirty';
 import { drawBuffers } from './util/gl/drawBuffers';
 import { DirectionalLightPass, FragmentLocation as DirLightLocations } from './passes/light/directional';
+import { Scene } from './scene';
 
 interface TrackedMembers {
     Size: any,
@@ -38,6 +39,7 @@ export class Renderer {
 
     protected _passes: RenderPass<any>[] = [];
     protected _geometryPass: GeometryPass;
+    protected _dirLightPass: DirectionalLightPass;
     protected _blitPass: BlitPass;
 
     public constructor(gl: WebGL2RenderingContext) {
@@ -88,58 +90,55 @@ export class Renderer {
     }
 
     private setupGeometryPass(target: Framebuffer) {
-        const geomPass = new GeometryPass(this._gl, "Geometry Forward");
-        geomPass.initialize();
-        geomPass.target = target;
-        geomPass.preDraw = () => {
+        const pass = new GeometryPass(this._gl, "Geometry Forward");
+        pass.initialize();
+        pass.target = target;
+        pass.preDraw = () => {
             drawBuffers(this._gl, 0b11111);
             target.clear(false, false);
         };
-        this._passes.push(geomPass);
-        this._geometryPass = geomPass;
+        this._passes.push(pass);
+        this._geometryPass = pass;
     }
 
     private setupLightBuffer() {
-        const lightFbo = new Framebuffer(this._gl, "Shading");
+        const fbo = new Framebuffer(this._gl, "Shading");
         const c0 = this._gl.COLOR_ATTACHMENT0;
-        lightFbo.initialize([
+        fbo.initialize([
             { slot: c0 + DirLightLocations.Color, texture: this.createTex(Formats.RGBA) },
         ]);
-        this._framebuffers.push(lightFbo);
-        return lightFbo;
+        this._framebuffers.push(fbo);
+        return fbo;
     }
 
     private setupDirLightPass(target: Framebuffer, color: Texture, position: Texture, normal: Texture) {
-        const dirLightPass = new DirectionalLightPass(this._gl, "Directional Light");
-        dirLightPass.initialize({ count: 1 });
-        dirLightPass.data = {
-            dir: [[-2, -5, -1]],
-            color: [[1, 1, 1]],
-        };
-        dirLightPass.target = target;
+        const pass = new DirectionalLightPass(this._gl, "Directional Light");
+        pass.initialize();
+        pass.target = target;
 
         color.minFilter = this._gl.NEAREST;
         color.magFilter = this._gl.NEAREST;
-        dirLightPass.color = color;
+        pass.color = color;
         position.minFilter = this._gl.NEAREST;
         position.magFilter = this._gl.NEAREST;
-        dirLightPass.position = position;
+        pass.position = position;
         normal.minFilter = this._gl.NEAREST;
         normal.magFilter = this._gl.NEAREST;
-        dirLightPass.normal = normal;
+        pass.normal = normal;
 
-        dirLightPass.preDraw = () => drawBuffers(this._gl, 0b1);
-        this._passes.push(dirLightPass);
+        pass.preDraw = () => drawBuffers(this._gl, 0b1);
+        this._passes.push(pass);
+        this._dirLightPass = pass;
     }
 
     private setupBlitPass(srcFbo: Framebuffer, srcBuffer: GLenum, dstFbo: Framebuffer, dstBuffer: GLenum) {
-        const blitPass = new BlitPass(this._gl);
-        blitPass.readTarget = srcFbo;
-        blitPass.readBuffer = srcBuffer;
-        blitPass.drawTarget = dstFbo;
-        blitPass.drawBuffer = dstBuffer;
-        this._passes.push(blitPass);
-        this._blitPass = blitPass;
+        const pass = new BlitPass(this._gl);
+        pass.readTarget = srcFbo;
+        pass.readBuffer = srcBuffer;
+        pass.drawTarget = dstFbo;
+        pass.drawBuffer = dstBuffer;
+        this._passes.push(pass);
+        this._blitPass = pass;
     }
 
     protected createTex(format: TextureFormat) {
@@ -204,16 +203,15 @@ export class Renderer {
         this._camera = v;
     }
 
-    public spawnDebugScene() {
-        const cMat = mat4.create();
-        mat4.scale(cMat, cMat, [0.2, 0.2, 0.2]);
-        const cubes: Geometry = {
-            base: createCube(this._gl),
-            model: cMat,
-            instance: create3dGrid(this._gl, { colors: true, step: [3, 3, 3] }),
-            colorMode: ColorMode.InstanceOnly,
-        };
-        this.addGeometry(cubes);
+    public set scene(v: Scene) {
+        if (v.geometry) {
+            this._geometryPass.clear();
+            v.geometry.forEach((g) => this._geometryPass.addGeometry(g));
+        }
+
+        if (v.light?.directional) {
+            this._dirLightPass.data = v.light.directional;
+        }
     }
 
     public addGeometry(geometry: Geometry) {

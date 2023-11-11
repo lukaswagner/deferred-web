@@ -17,34 +17,23 @@ type Options = {
 export class FullscreenPass<T extends Tracked = Tracked> extends RenderPass<T> {
     protected _buffer: WebGLBuffer;
     protected _program: WebGLProgram;
+    protected _vert: WebGLShader;
+    protected _frag: WebGLShader;
     protected _target: Framebuffer;
 
     protected _uniforms: Uniforms;
 
     public initialize(options?: Options) {
-        const vert = this._gl.createShader(this._gl.VERTEX_SHADER);
-        const vertSrc = require('./fullscreen.vert') as string;
-        this._gl.shaderSource(vert, vertSrc);
-        this._gl.compileShader(vert);
-        if(!this._gl.getShaderParameter(vert, this._gl.COMPILE_STATUS))
-            console.log(this._gl.getShaderInfoLog(vert));
+        this._vert = this._gl.createShader(this._gl.VERTEX_SHADER);
+        this.compileVert();
 
-        const frag = this._gl.createShader(this._gl.FRAGMENT_SHADER);
-        let fragSrc = options?.fragSrc ?? require('./fullscreen.frag') as string;
-        fragSrc = fragSrc.replaceAll('COLOR_LOCATION', FragmentLocation.Color.toString());
-        this._gl.shaderSource(frag, fragSrc);
-        this._gl.compileShader(frag);
-        if(!this._gl.getShaderParameter(frag, this._gl.COMPILE_STATUS))
-            console.log(this._gl.getShaderInfoLog(frag));
+        this._frag = this._gl.createShader(this._gl.FRAGMENT_SHADER);
+        this.compileFrag(options?.fragSrc);
 
         this._program = this._gl.createProgram();
-        this._gl.attachShader(this._program, vert);
-        this._gl.attachShader(this._program, frag);
-        this._gl.linkProgram(this._program);
-        if(!this._gl.getProgramParameter(this._program, this._gl.LINK_STATUS))
-            console.log(this._gl.getProgramInfoLog(this._program));
-
-        this._uniforms = new Uniforms(this._gl, this._program);
+        this._gl.attachShader(this._program, this._vert);
+        this._gl.attachShader(this._program, this._frag);
+        this.linkProgram();
 
         this._buffer = this._gl.createBuffer();
         this._gl.bindBuffer(this._gl.ARRAY_BUFFER, this._buffer);
@@ -56,6 +45,31 @@ export class FullscreenPass<T extends Tracked = Tracked> extends RenderPass<T> {
 
         this._dirty.setAll();
         return true;
+    }
+
+    protected compileVert() {
+        const src = require('./fullscreen.vert') as string;
+        this._gl.shaderSource(this._vert, src);
+        this._gl.compileShader(this._vert);
+        if (!this._gl.getShaderParameter(this._vert, this._gl.COMPILE_STATUS))
+            console.log(this._gl.getShaderInfoLog(this._vert));
+    }
+
+    protected compileFrag(src?: string) {
+        if(!src) src = require('./fullscreen.frag') as string;
+        src = src.replaceAll('COLOR_LOCATION', FragmentLocation.Color.toString());
+        this._gl.shaderSource(this._frag, src);
+        this._gl.compileShader(this._frag);
+        if (!this._gl.getShaderParameter(this._frag, this._gl.COMPILE_STATUS))
+            console.log(this._gl.getShaderInfoLog(this._frag));
+    }
+
+    protected linkProgram() {
+        this._gl.linkProgram(this._program);
+        if (!this._gl.getProgramParameter(this._program, this._gl.LINK_STATUS))
+            console.log(this._gl.getProgramInfoLog(this._program));
+
+        this._uniforms = new Uniforms(this._gl, this._program);
     }
 
     public prepare(): boolean {

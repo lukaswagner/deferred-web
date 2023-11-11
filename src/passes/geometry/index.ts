@@ -191,4 +191,9 @@ export class GeometryPass extends RenderPass<Tracked> implements CameraPass {
         this._geometries.push(v);
         this._dirty.set('Geometry');
     }
+
+    public clear() {
+        this._geometries = [];
+        this._dirty.set('Geometry');
+    }
 }
