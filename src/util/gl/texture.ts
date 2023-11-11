@@ -65,13 +65,25 @@ export class Texture {
         return this._format;
     }
 
-    public bind(target = this._gl.TEXTURE0) {
+    public bind(target: GLenum = this._gl.TEXTURE0) {
         this._gl.activeTexture(target);
         this._gl.bindTexture(this._gl.TEXTURE_2D, this.readHandle);
     }
 
-    public unbind(target = this._gl.TEXTURE0) {
+    public unbind(target: GLenum = this._gl.TEXTURE0) {
         this._gl.activeTexture(target);
         this._gl.bindTexture(this._gl.TEXTURE_2D, null);
+    }
+
+    public set minFilter(v: GLenum) {
+        this.bind();
+        this._gl.texParameteri(this._gl.TEXTURE_2D, this._gl.TEXTURE_MIN_FILTER, v);
+        this.unbind();
+    }
+
+    public set magFilter(v: GLenum) {
+        this.bind();
+        this._gl.texParameteri(this._gl.TEXTURE_2D, this._gl.TEXTURE_MAG_FILTER, v);
+        this.unbind();
     }
 }

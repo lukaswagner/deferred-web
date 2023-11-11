@@ -10,6 +10,10 @@ export enum FragmentLocation {
     Color,
 }
 
+type Options = {
+    fragSrc?: string,
+}
+
 export class FullscreenPass<T extends Tracked = Tracked> extends RenderPass<T> {
     protected _buffer: WebGLBuffer;
     protected _program: WebGLProgram;
@@ -17,11 +21,7 @@ export class FullscreenPass<T extends Tracked = Tracked> extends RenderPass<T> {
 
     protected _uniforms: Uniforms;
 
-    public constructor(gl: WebGL2RenderingContext, name?: string) {
-        super(gl, name);
-    }
-
-    public initialize(fragSrc?: string) {
+    public initialize(options?: Options) {
         const vert = this._gl.createShader(this._gl.VERTEX_SHADER);
         const vertSrc = require('./fullscreen.vert') as string;
         this._gl.shaderSource(vert, vertSrc);
@@ -30,7 +30,7 @@ export class FullscreenPass<T extends Tracked = Tracked> extends RenderPass<T> {
             console.log(this._gl.getShaderInfoLog(vert));
 
         const frag = this._gl.createShader(this._gl.FRAGMENT_SHADER);
-        if(!fragSrc) fragSrc = require('./fullscreen.frag') as string;
+        let fragSrc = options?.fragSrc ?? require('./fullscreen.frag') as string;
         fragSrc = fragSrc.replaceAll('COLOR_LOCATION', FragmentLocation.Color.toString());
         this._gl.shaderSource(frag, fragSrc);
         this._gl.compileShader(frag);

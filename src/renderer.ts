@@ -13,6 +13,7 @@ import { createCube } from './geometry/base/cube';
 import { create3dGrid } from './geometry/instance/3dGrid';
 import { Dirty } from './util/dirty';
 import { drawBuffers } from './util/gl/drawBuffers';
+import { DirectionalLightPass, FragmentLocation as DirLightLocations } from './passes/light/directional';
 
 interface TrackedMembers {
     Size: any,
@@ -50,41 +51,73 @@ export class Renderer {
             return;
         }
 
-        const canvasFbo = CanvasFramebuffer.getInstance(this._gl);
-        this._framebuffers.push(canvasFbo);
-
         const tex = (format: TextureFormat) => {
             const tex = new Texture(this._gl);
             tex.initialize(format);
             return tex;
         }
 
-        const intermediateFbo = new Framebuffer(this._gl, "Forward Output");
+        // FORWARD
+        const geomFbo = new Framebuffer(this._gl, "Forward");
         const c0 = this._gl.COLOR_ATTACHMENT0;
-        intermediateFbo.initialize([
-            { slot: c0 + GeomLocations.Color, texture: tex(Formats.RGBA) },
-            { slot: c0 + GeomLocations.WorldPosition, texture: tex(Formats.RGBA16F) },
-            { slot: c0 + GeomLocations.WorldNormal, texture: tex(Formats.RGBA16F) },
+        const geomColor = tex(Formats.RGBA);
+        const geomPosition = tex(Formats.RGBA16F);
+        const geomNormal = tex(Formats.RGBA16F);
+        geomFbo.initialize([
+            { slot: c0 + GeomLocations.Color, texture: geomColor },
+            { slot: c0 + GeomLocations.WorldPosition, texture: geomPosition },
+            { slot: c0 + GeomLocations.WorldNormal, texture: geomNormal },
             { slot: c0 + GeomLocations.ViewPosition, texture: tex(Formats.RGBA16F) },
             { slot: c0 + GeomLocations.ViewNormal, texture: tex(Formats.RGBA16F) },
             { slot: this._gl.DEPTH_ATTACHMENT, texture: tex(Formats.Depth) },
         ]);
-        this._framebuffers.push(intermediateFbo);
+        this._framebuffers.push(geomFbo);
 
         const geomPass = new GeometryPass(this._gl, "Geometry Forward");
         geomPass.initialize();
-        geomPass.target = intermediateFbo;
+        geomPass.target = geomFbo;
         geomPass.preDraw = () => {
             drawBuffers(this._gl, 0b11111);
-            intermediateFbo.clear(false, false);
+            geomFbo.clear(false, false);
         };
         this._passes.push(geomPass);
         this._geometryPass = geomPass;
 
+        // SHADING
+        const lightFbo = new Framebuffer(this._gl, "Shading");
+        lightFbo.initialize([
+            { slot: c0 + DirLightLocations.Color, texture: tex(Formats.RGBA) },
+        ]);
+        this._framebuffers.push(lightFbo);
+
+        const dirLightPass = new DirectionalLightPass(this._gl, "Directional Light");
+        dirLightPass.initialize({ count: 1 });
+        dirLightPass.data = {
+            dir: [[-2, -5, -1]],
+            color: [[1, 1, 1]],
+        }
+
+        geomColor.minFilter = this._gl.NEAREST;
+        geomColor.magFilter = this._gl.NEAREST;
+        dirLightPass.color = geomColor;
+        geomPosition.minFilter = this._gl.NEAREST;
+        geomPosition.magFilter = this._gl.NEAREST;
+        dirLightPass.position = geomPosition;
+        geomNormal.minFilter = this._gl.NEAREST;
+        geomNormal.magFilter = this._gl.NEAREST;
+        dirLightPass.normal = geomNormal;
+
+        dirLightPass.target = lightFbo;
+        dirLightPass.preDraw = () => drawBuffers(this._gl, 0b1);
+        this._passes.push(dirLightPass);
+
+        // OUTPUT
+        const canvasFbo = CanvasFramebuffer.getInstance(this._gl);
+        this._framebuffers.push(canvasFbo);
+
         const blitPass = new BlitPass(this._gl);
-        blitPass.initialize();
-        blitPass.readTarget = intermediateFbo;
-        blitPass.readBuffer = c0 + GeomLocations.Color;
+        blitPass.readTarget = lightFbo;
+        blitPass.readBuffer = c0 + DirLightLocations.Color;
         blitPass.drawTarget = canvasFbo;
         blitPass.drawBuffer = this._gl.BACK;
         this._passes.push(blitPass);

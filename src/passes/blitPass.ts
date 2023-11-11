@@ -10,10 +10,6 @@ interface Tracked {
 }
 
 export class BlitPass extends RenderPass<Tracked> {
-    public constructor(gl: WebGL2RenderingContext, name?: string) {
-        super(gl, name);
-    }
-
     protected _readTarget: Framebuffer;
     public set readTarget(value: Framebuffer) {
         this._readTarget = value;

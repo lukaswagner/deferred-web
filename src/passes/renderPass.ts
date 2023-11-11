@@ -22,7 +22,7 @@ export abstract class RenderPass<T> {
         return shouldDraw;
     }
 
-    public abstract initialize(...args: unknown[]): void;
+    public abstract initialize(options?: {}): void;
 
     protected _setup?(): void;
     public set setup(v: () => void) {
