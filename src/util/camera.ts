@@ -36,7 +36,7 @@ export class Camera {
         this._updateTimestamp();
     }
 
-    protected _fovY = 45;
+    protected _fovY = 60;
     public get fovY() {
         return this._fovY;
     }
@@ -77,6 +77,6 @@ export class Camera {
     }
 
     public get projection(): mat4 {
-        return mat4.perspective(mat4.create(), this._fovY, this._aspect, this._near, this._far);
+        return mat4.perspective(mat4.create(), this._fovY * Math.PI / 180, this._aspect, this._near, this._far);
     }
 }

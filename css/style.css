@@ -3,8 +3,8 @@
 :root {
     --small-space: 0.5em;
     --space: 1em;
-    --ui-width: 15em;
     --ui-input-width: 8em;
+    --ui-input-width-small: 5em;
 }
 
 body {

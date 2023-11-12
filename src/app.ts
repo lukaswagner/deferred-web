@@ -7,6 +7,7 @@ import { createDebugScene } from './scene';
 class App {
     protected _canvas: HTMLCanvasElement;
     protected _renderer: Renderer;
+    protected _camera: Camera;
 
     constructor(canvasId: string, uiId: string, containerId?: string) {
         this._canvas = document.getElementById(canvasId) as HTMLCanvasElement;
@@ -14,11 +15,11 @@ class App {
         const gl = this._canvas.getContext('webgl2', contextAttributes);
         if (!gl) throw new Error('Could not acquire WebGL context');
 
-        const camera = new Camera();
-        new Navigation(this._canvas, camera);
+        this._camera = new Camera();
+        new Navigation(this._canvas, this._camera);
 
         this._renderer = new Renderer(gl);
-        this._renderer.camera = camera;
+        this._renderer.camera = this._camera;
         this._renderer.initialize();
 
         const scene = createDebugScene(gl);
@@ -33,6 +34,36 @@ class App {
     protected setupUI(uiId: string) {
         const element = document.getElementById(uiId) as HTMLCanvasElement;
         const ui = new UI(element, true);
+
+        ui.input.numberRange({
+            label: 'fov',
+            min: 5,
+            max: 135,
+            step: 1,
+            value: this._camera.fovY,
+            handler: (v) => this._camera.fovY = v,
+            triggerHandlerOnMove: true
+        });
+
+        ui.input.numberRange({
+            label: 'near (2^x)',
+            min: -5,
+            max: 0,
+            step: 1,
+            value: Math.log2(this._camera.near),
+            handler: (v) => this._camera.near = 2**v,
+            triggerHandlerOnMove: true
+        });
+
+        ui.input.numberRange({
+            label: 'far (2^x)',
+            min: 1,
+            max: 10,
+            step: 1,
+            value: Math.log2(this._camera.far),
+            handler: (v) => this._camera.far = 2**v,
+            triggerHandlerOnMove: true
+        });
 
         const debugViews = this._renderer.getDebugViews();
         ui.input.select({

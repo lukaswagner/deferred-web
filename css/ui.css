@@ -4,7 +4,6 @@
     right: var(--space);
     background: white;
     padding: var(--small-space);
-    width: var(--ui-width);
 }
 
 #ui div {
@@ -17,9 +16,12 @@
     margin-right: auto;
 }
 
-#ui select {
+#ui input, select {
     box-sizing: border-box;
     width: var(--ui-input-width);
-    height: 1.8em;
-    margin-left: var(--small-space);
+    margin-left: var(--space);
+}
+
+#ui input[type='number'] {
+    width: var(--ui-input-width-small);
 }
