@@ -1,9 +1,12 @@
-export class Dirty<T> {
+export type DirtyInit = Record<any, boolean>;
+
+export class Dirty<T extends DirtyInit> {
     protected _map: {[K in keyof T]: boolean};
     protected _any = false;
 
-    constructor() {
+    constructor(init: T) {
         this._map = {} as typeof this._map;
+        for (const key in init) this._map[key] = init[key];
     }
 
     public set(key: keyof T) {

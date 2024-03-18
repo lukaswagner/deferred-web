@@ -2,22 +2,23 @@ import { vec3 } from 'gl-matrix';
 import { FullscreenPass } from '../../fullscreen';
 import { UniformBlock } from '../../../util/uniformBlock';
 import { Texture } from '../../../util/gl/texture';
+import { GL } from '../../../util/gl/gl';
 
 type Data = { dir: vec3, color: vec3 }[];
 
-interface Tracked {
-    Data: any;
-    Target: any;
-    Postion: any;
-    Normal: any;
-    Color: any;
+const tracked = {
+    Data: false,
+    Target: false,
+    Postion: false,
+    Normal: false,
+    Color: false,
 }
 
 export enum FragmentLocation {
     Color,
 }
 
-export class DirectionalLightPass extends FullscreenPass<Tracked> {
+export class DirectionalLightPass extends FullscreenPass<typeof tracked> {
     protected _origFragSrc: string;
 
     protected _positionTex: Texture;
@@ -26,6 +27,10 @@ export class DirectionalLightPass extends FullscreenPass<Tracked> {
 
     protected _data: UniformBlock;
     protected _size = 0;
+
+    public constructor(gl: GL, name?: string) {
+        super(gl, tracked, name);
+    }
 
     public initialize(): boolean {
         this._origFragSrc = require('./directionalLight.frag') as string;

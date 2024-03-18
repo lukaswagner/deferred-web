@@ -16,8 +16,12 @@ import { drawBuffers } from './util/gl/drawBuffers';
 import { DirectionalLightPass, FragmentLocation as DirLightLocations } from './passes/light/directional';
 import { Scene } from './scene';
 
-interface TrackedMembers {
-    Size: any,
+const TrackedMembers = {
+    Size: true,
+    TaaFrame: true,
+    TaaNumFrames: true,
+    TaaHaltonBase1: true,
+    TaaHaltonBase2: true,
 }
 
 type DebugView = {
@@ -32,7 +36,7 @@ export class Renderer {
     protected _resizeObserver: ResizeObserver;
     protected _size: vec2;
 
-    protected _dirty = new Dirty<TrackedMembers>();
+    protected _dirty = new Dirty(TrackedMembers);
     protected _camera: Camera;
     protected _framebuffers: Framebuffer[] = [];
     protected _lastFrame = 0;

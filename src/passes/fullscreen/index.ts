@@ -1,10 +1,12 @@
 import { RenderPass } from '../renderPass';
 import { Uniforms } from '../../util/uniforms';
 import { Framebuffer } from '../../framebuffers/framebuffer';
+import { GL } from '../../util/gl/gl';
 
-interface Tracked {
-    Target: any
+const tracked = {
+    Target: true,
 }
+type Tracked = typeof tracked;
 
 export enum FragmentLocation {
     Color,
@@ -22,6 +24,10 @@ export class FullscreenPass<T extends Tracked = Tracked> extends RenderPass<T> {
     protected _target: Framebuffer;
 
     protected _uniforms: Uniforms;
+
+    public constructor(gl: GL, trackedMembers: T = tracked as any as T, name?: string) {
+        super(gl, trackedMembers, name);
+    }
 
     public initialize(options?: Options) {
         this._vert = this._gl.createShader(this._gl.VERTEX_SHADER);

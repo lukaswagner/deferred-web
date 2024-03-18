@@ -1,15 +1,20 @@
 import { Framebuffer } from '../framebuffers/framebuffer';
 import { RenderPass } from './renderPass';
 import { drawBuffer } from '../util/gl/drawBuffers';
+import { GL } from '../util/gl/gl';
 
-interface Tracked {
-    ReadTarget: any;
-    ReadBuffer: any;
-    DrawTarget: any;
-    DrawBuffer: any;
+const tracked = {
+    ReadTarget: false,
+    ReadBuffer: false,
+    DrawTarget: false,
+    DrawBuffer: false,
 }
 
-export class BlitPass extends RenderPass<Tracked> {
+export class BlitPass extends RenderPass<typeof tracked> {
+    public constructor(gl: GL, name?: string) {
+        super(gl, tracked, name);
+    }
+
     protected _readTarget: Framebuffer;
     public set readTarget(value: Framebuffer) {
         this._readTarget = value;

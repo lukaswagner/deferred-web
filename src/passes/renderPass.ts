@@ -1,14 +1,14 @@
-import { Dirty } from '../util/dirty';
+import { Dirty, DirtyInit } from '../util/dirty';
 import { GL } from '../util/gl/gl';
 
-export abstract class RenderPass<T> {
+export abstract class RenderPass<T extends DirtyInit> {
     protected _gl: GL;
     protected _dirty: Dirty<T>;
     protected _name: string;
 
-    public constructor(gl: GL, name?: string) {
+    public constructor(gl: GL, trackedMembers: T, name?: string) {
         this._gl = gl;
-        this._dirty = new Dirty();
+        this._dirty = new Dirty(trackedMembers);
         this._name = name;
     }
 

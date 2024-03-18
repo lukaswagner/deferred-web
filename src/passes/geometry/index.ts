@@ -5,12 +5,13 @@ import { Uniforms } from '../../util/uniforms';
 import { mat4 } from 'gl-matrix';
 import { Framebuffer } from '../../framebuffers/framebuffer';
 import { drawBuffers } from '../../util/gl/drawBuffers';
+import { GL } from '../../util/gl/gl';
 
-interface Tracked {
-    Target: any;
-    View: any;
-    Projection: any;
-    Geometry: any;
+const tracked = {
+    Target: true,
+    View: true,
+    Projection: true,
+    Geometry: true,
 }
 
 export enum FragmentLocation {
@@ -21,7 +22,7 @@ export enum FragmentLocation {
     ViewNormal,
 }
 
-export class GeometryPass extends RenderPass<Tracked> implements CameraPass {
+export class GeometryPass extends RenderPass<typeof tracked> implements CameraPass {
     protected _program: WebGLProgram;
     protected _target: Framebuffer;
 
@@ -34,6 +35,10 @@ export class GeometryPass extends RenderPass<Tracked> implements CameraPass {
     protected _colorMode: ColorMode;
 
     protected _geometries: Geometry[] = [];
+
+    public constructor(gl: GL, name?: string) {
+        super(gl, tracked, name);
+    }
 
     public initialize() {
         const vert = this._gl.createShader(this._gl.VERTEX_SHADER);
