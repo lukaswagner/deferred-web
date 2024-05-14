@@ -10,6 +10,7 @@
     display: flex;
     align-items: center;
     height: 1.5em;
+    margin-bottom: var(--tiny-space);
 }
 
 #ui label {
@@ -18,10 +19,17 @@
 
 #ui input, select {
     box-sizing: border-box;
-    width: var(--ui-input-width);
     margin-left: var(--space);
+}
+
+#ui input {
+    width: var(--ui-input-width);
 }
 
 #ui input[type='number'] {
     width: var(--ui-input-width-small);
+}
+
+#ui input[type='checkbox'] {
+    width: unset;
 }

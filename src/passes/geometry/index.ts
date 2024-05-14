@@ -129,6 +129,23 @@ export class GeometryPass extends RenderPass<typeof tracked> implements CameraPa
         const base = geometry.base;
         const instance = geometry.instance!;
 
+        if (instanced !== this._instanced) {
+            this._instanced = instanced;
+            this._gl.uniform1i(this._uniforms.get('u_instanced'), +this._instanced);
+        }
+
+        const colorMode = instanced && geometry.colorMode ? geometry.colorMode : ColorMode.BaseOnly;
+        if (colorMode !== this._colorMode) {
+            this._colorMode = colorMode;
+            this._gl.uniform1i(this._uniforms.get('u_colorMode'), this._colorMode);
+        }
+
+        const model = geometry.model ?? mat4.create();
+        if (!this._model || !mat4.equals(model, this._model)) {
+            this._model = model;
+            this._gl.uniformMatrix4fv(this._uniforms.get('u_model'), false, this._model);
+        }
+
         if (indexed) {
             if (instanced) this._gl.drawElementsInstanced(
                 base.mode, base.count, base.indexType!, 0, instance.count);
@@ -150,23 +167,6 @@ export class GeometryPass extends RenderPass<typeof tracked> implements CameraPa
 
         const indexed = geometry.base.index !== undefined;
         const instanced = geometry.instance !== undefined;
-
-        if (instanced !== this._instanced) {
-            this._instanced = instanced;
-            this._gl.uniform1i(this._uniforms.get('u_instanced'), +this._instanced);
-        }
-
-        const colorMode = instanced && geometry.colorMode ? geometry.colorMode : ColorMode.BaseOnly;
-        if (colorMode !== this._colorMode) {
-            this._colorMode = colorMode;
-            this._gl.uniform1i(this._uniforms.get('u_colorMode'), this._colorMode);
-        }
-
-        const model = geometry.model ?? mat4.create();
-        if (!this._model || !mat4.equals(model, this._model)) {
-            this._model = model;
-            this._gl.uniformMatrix4fv(this._uniforms.get('u_model'), false, this._model);
-        }
 
         const base = geometry.base;
         const instance = geometry.instance!;

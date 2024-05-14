@@ -13,11 +13,14 @@ import { createCube } from './geometry/base/cube';
 import { create3dGrid } from './geometry/instance/3dGrid';
 import { Dirty } from './util/dirty';
 import { drawBuffers } from './util/gl/drawBuffers';
-import { DirectionalLightPass, FragmentLocation as DirLightLocations } from './passes/light/directional';
+import { DirectionalLightPass } from './passes/light/directional';
+import { BaseLightPass, FragmentLocation as LightLocations } from './passes/light/base';
 import { Scene } from './scene';
 import { halton2d } from './util/halton';
 import { AccumulatePass } from './passes/taa';
 import { isJitterPass } from './passes/jitterPass';
+import { AmbientLightPass } from './passes/light/ambient';
+import { LightMergePass } from './passes/light/merge';
 
 const TrackedMembers = {
     Size: true,
@@ -50,7 +53,8 @@ export class Renderer {
 
     protected _passes: RenderPass<any>[] = [];
     protected _geometryPass: GeometryPass;
-    protected _dirLightPass: DirectionalLightPass;
+    protected _ambientLightPass: AmbientLightPass;
+    protected _directionalLightPass: DirectionalLightPass;
     protected _accumulatePass: AccumulatePass;
     protected _blitPass: BlitPass;
 
@@ -78,15 +82,23 @@ export class Renderer {
         const geom = this.setupGeometryBuffer();
         this.setupGeometryPass(geom.fbo);
 
-        const light = this.setupSingleChannelBuffer('Shading');
-        this.setupDirLightPass(light.fbo, geom.color, geom.position, geom.normal);
+        const ambient = this.setupSingleChannelBuffer('Ambient Light');
+        this._ambientLightPass = new AmbientLightPass(this._gl, 'Ambient Light');
+        this.setupLightPass(this._ambientLightPass, ambient.fbo, geom.color, geom.position, geom.normal);
+
+        const directional = this.setupSingleChannelBuffer('Directional Light');
+        this._directionalLightPass = new DirectionalLightPass(this._gl, 'Directional Light');
+        this.setupLightPass(this._directionalLightPass, directional.fbo, geom.color, geom.position, geom.normal);
+
+        const merge = this.setupSingleChannelBuffer('Light Merge');
+        this.setupLightMergePass(merge.fbo, ambient.texture, directional.texture, geom.color);
 
         const accumulate = this.setupSingleChannelBuffer('TAA');
         this._accumulateBuffer = accumulate.fbo;
-        this.setupAccumulatePass(accumulate.fbo, light.texture);
+        this.setupAccumulatePass(accumulate.fbo, merge.texture);
 
         this.setupBlitPass(
-            accumulate.fbo, this._gl.COLOR_ATTACHMENT0 + DirLightLocations.Color,
+            accumulate.fbo, this._gl.COLOR_ATTACHMENT0 + LightLocations.Color,
             canvasFbo, this._gl.BACK
         );
 
@@ -131,14 +143,13 @@ export class Renderer {
         const texture = this.createTex(Formats.RGBA);
         const c0 = this._gl.COLOR_ATTACHMENT0;
         fbo.initialize([
-            { slot: c0 + DirLightLocations.Color, texture },
+            { slot: c0 + LightLocations.Color, texture },
         ]);
         this._framebuffers.push(fbo);
         return { fbo, texture };
     }
 
-    private setupDirLightPass(target: Framebuffer, color: Texture, position: Texture, normal: Texture) {
-        const pass = new DirectionalLightPass(this._gl, 'Directional Light');
+    private setupLightPass(pass: BaseLightPass, target: Framebuffer, color: Texture, position: Texture, normal: Texture) {
         pass.initialize();
         pass.target = target;
 
@@ -154,7 +165,24 @@ export class Renderer {
 
         pass.preDraw = () => drawBuffers(this._gl, 0b1);
         this._passes.push(pass);
-        this._dirLightPass = pass;
+    }
+
+    private setupLightMergePass(target: Framebuffer, ambient: Texture, directional: Texture, color: Texture) {
+        const pass = new LightMergePass(this._gl, 'Light Merge');
+        pass.initialize();
+        pass.target = target;
+
+        ambient.minFilter = this._gl.NEAREST;
+        ambient.magFilter = this._gl.NEAREST;
+        pass.ambient = ambient;
+        directional.minFilter = this._gl.NEAREST;
+        directional.magFilter = this._gl.NEAREST;
+        pass.directional = directional;
+        color.minFilter = this._gl.NEAREST;
+        color.magFilter = this._gl.NEAREST;
+        pass.color = color;
+
+        this._passes.push(pass);
     }
 
     private setupAccumulatePass(target: Framebuffer, input: Texture) {
@@ -304,9 +332,8 @@ export class Renderer {
             v.geometry.forEach((g) => this._geometryPass.addGeometry(g));
         }
 
-        if (v.light?.directional) {
-            this._dirLightPass.data = v.light.directional;
-        }
+        this._ambientLightPass.data = v.light.ambient ?? [];
+        this._directionalLightPass.data = v.light.directional ?? [];
     }
 
     public addGeometry(geometry: Geometry) {

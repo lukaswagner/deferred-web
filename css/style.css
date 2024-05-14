@@ -1,6 +1,7 @@
 @import 'ui.css';
 
 :root {
+    --tiny-space: 0.2em;
     --small-space: 0.5em;
     --space: 1em;
     --ui-input-width: 8em;
