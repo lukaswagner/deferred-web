@@ -80,11 +80,11 @@ export class Renderer {
         const geom = this.setupGeometryBuffer();
         this.setupGeometryPass(geom.fbo);
 
-        const ambient = this.setupSingleChannelBuffer('Ambient Light');
+        const ambient = this.setupSingleChannelBuffer('Ambient Light', Formats.RGBA16F);
         this._ambientLightPass = new AmbientLightPass(this._gl, 'Ambient Light');
         this.setupLightPass(this._ambientLightPass, ambient.fbo, geom.color, geom.position, geom.normal);
 
-        const directional = this.setupSingleChannelBuffer('Directional Light');
+        const directional = this.setupSingleChannelBuffer('Directional Light', Formats.RGBA16F);
         this._directionalLightPass = new DirectionalLightPass(this._gl, 'Directional Light');
         this.setupLightPass(this._directionalLightPass, directional.fbo, geom.color, geom.position, geom.normal);
 
@@ -136,9 +136,9 @@ export class Renderer {
         this._geometryPass = pass;
     }
 
-    private setupSingleChannelBuffer(name: string) {
+    private setupSingleChannelBuffer(name: string, format = Formats.RGBA) {
         const fbo = new Framebuffer(this._gl, name);
-        const texture = this.createTex(Formats.RGBA);
+        const texture = this.createTex(format);
         const c0 = this._gl.COLOR_ATTACHMENT0;
         fbo.initialize([
             { slot: c0 + LightLocations.Color, texture },
