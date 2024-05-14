@@ -2,16 +2,18 @@ import { ColorMode, Geometry } from '../../geometry/geometry';
 import { CameraPass } from '../cameraPass';
 import { RenderPass } from '../renderPass';
 import { Uniforms } from '../../util/uniforms';
-import { mat4 } from 'gl-matrix';
+import { mat4, vec2 } from 'gl-matrix';
 import { Framebuffer } from '../../framebuffers/framebuffer';
 import { drawBuffers } from '../../util/gl/drawBuffers';
 import { GL } from '../../util/gl/gl';
+import { JitterPass } from '../jitterPass';
 
 const tracked = {
     Target: true,
     View: true,
     Projection: true,
     Geometry: true,
+    NdcOffset: true,
 }
 
 export enum FragmentLocation {
@@ -22,7 +24,7 @@ export enum FragmentLocation {
     ViewNormal,
 }
 
-export class GeometryPass extends RenderPass<typeof tracked> implements CameraPass {
+export class GeometryPass extends RenderPass<typeof tracked> implements CameraPass, JitterPass {
     protected _program: WebGLProgram;
     protected _target: Framebuffer;
 
@@ -33,6 +35,8 @@ export class GeometryPass extends RenderPass<typeof tracked> implements CameraPa
     protected _projection: mat4;
     protected _instanced: boolean;
     protected _colorMode: ColorMode;
+    protected _ndcOffset = vec2.create();
+    protected _size =  vec2.create();
 
     protected _geometries: Geometry[] = [];
 
@@ -82,6 +86,19 @@ export class GeometryPass extends RenderPass<typeof tracked> implements CameraPa
         if (this._dirty.get('Projection')) {
             this._gl.useProgram(this._program);
             this._gl.uniformMatrix4fv(this._uniforms.get('u_projection'), false, this._projection);
+        }
+
+        if (this._dirty.get('NdcOffset')) {
+            this._gl.useProgram(this._program);
+            this._gl.uniform2fv(this._uniforms.get('u_ndcOffset'), this._ndcOffset);
+        }
+
+        if(this._target && !vec2.equals(this._size, this._target.size)) {
+            vec2.copy(this._size, this._target.size);
+            this._gl.useProgram(this._program);
+            this._gl.uniform2fv(
+                this._uniforms.get('u_resolutionInverse'),
+                vec2.div(vec2.create(), vec2.fromValues(1, 1), this._size));
         }
 
         this._gl.useProgram(null);
@@ -190,6 +207,11 @@ export class GeometryPass extends RenderPass<typeof tracked> implements CameraPa
     public set projection(v: mat4) {
         this._projection = v;
         this._dirty.set('Projection');
+    }
+
+    public set ndcOffset(v: vec2) {
+        this._ndcOffset = v;
+        this._dirty.set('NdcOffset');
     }
 
     public addGeometry(v: Geometry) {

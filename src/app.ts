@@ -1,13 +1,18 @@
 import { Camera } from './util/camera';
 import { Renderer } from './renderer';
 import { Navigation } from './util/navigation';
-import { UI } from '@lukaswagner/web-ui';
+import { NumberInput, ProgressOutput, TextOutput, UI } from '@lukaswagner/web-ui';
 import { createDebugScene } from './scene';
 
 class App {
     protected _canvas: HTMLCanvasElement;
     protected _renderer: Renderer;
     protected _camera: Camera;
+    protected _ui: UI;
+
+    protected _isDrawingOutput: TextOutput;
+    protected _taaFrameOutput: ProgressOutput;
+    protected _taaFramesInput: NumberInput;
 
     constructor(canvasId: string, uiId: string, containerId?: string) {
         this._canvas = document.getElementById(canvasId) as HTMLCanvasElement;
@@ -33,9 +38,15 @@ class App {
 
     protected setupUI(uiId: string) {
         const element = document.getElementById(uiId) as HTMLCanvasElement;
-        const ui = new UI(element, true);
+        this._ui = new UI(element, true);
 
-        ui.input.numberRange({
+        this._ui.input.number({
+            label: 'resolution scale (1 / 2^x)',
+            value: 0,
+            handler: (v) => this._renderer.sizeFactor = 1 / 2**v
+        });
+
+        this._ui.input.numberRange({
             label: 'fov',
             min: 5,
             max: 135,
@@ -45,7 +56,7 @@ class App {
             triggerHandlerOnMove: true
         });
 
-        ui.input.numberRange({
+        this._ui.input.numberRange({
             label: 'near (2^x)',
             min: -5,
             max: 0,
@@ -55,7 +66,7 @@ class App {
             triggerHandlerOnMove: true
         });
 
-        ui.input.numberRange({
+        this._ui.input.numberRange({
             label: 'far (2^x)',
             min: 1,
             max: 10,
@@ -66,11 +77,39 @@ class App {
         });
 
         const debugViews = this._renderer.getDebugViews();
-        ui.input.select({
+        this._ui.input.select({
             label: 'output',
             optionValues: debugViews.map((d) => d.name),
-            handler: (v) => this._renderer.setDebugView(debugViews[v.index]),
+            handler: (v) => this._renderer.debugView = debugViews[v.index],
             handleOnInit: false,
+        });
+
+        this._isDrawingOutput = this._ui.output.text({
+            label: 'drawing',
+            id: 'isDrawing'
+        });
+
+        this._ui.input.checkbox({
+            label: 'taa enabled',
+            value: true,
+            handler: (v) => this._renderer.taaEnabled = v
+        });
+
+        this._taaFramesInput = this._ui.input.number({
+            label: 'taa frames',
+            value: 64,
+            handler: (v) => this._renderer.taaNumFrames = v
+        });
+
+        this._ui.input.array({
+            label: 'taa halton sequence',
+            length: 2,
+            value: [2, 3],
+            handler: (v) => this._renderer.taaHaltonSequence = v as [number, number]
+        });
+
+        this._taaFrameOutput = this._ui.output.progress({
+            label: 'taa progress',
         });
     }
 
@@ -87,8 +126,10 @@ class App {
     protected draw(time: number) {
         const shouldDraw = this._renderer.prepare();
         if (shouldDraw) this._renderer.draw(time);
+        this._isDrawingOutput.value = shouldDraw ? 'true' : 'false';
+        this._taaFrameOutput.value = this._renderer.taaFrame / this._taaFramesInput.value;
         requestAnimationFrame((t) => this.draw(t));
     }
 }
 
-new App('canvas', 'ui', 'container');
+new App('canvas', 'ui');

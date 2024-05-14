@@ -7,7 +7,7 @@ import { Formats, TextureFormat } from './util/gl/formats';
 import { GeometryPass, FragmentLocation as GeomLocations } from './passes/geometry';
 import { CanvasFramebuffer } from './framebuffers/canvasFramebuffer';
 import { BlitPass } from './passes/blitPass';
-import { mat4, vec2 } from 'gl-matrix';
+import { mat4, vec2, vec3 } from 'gl-matrix';
 import { ColorMode, Geometry } from './geometry/geometry';
 import { createCube } from './geometry/base/cube';
 import { create3dGrid } from './geometry/instance/3dGrid';
@@ -15,9 +15,13 @@ import { Dirty } from './util/dirty';
 import { drawBuffers } from './util/gl/drawBuffers';
 import { DirectionalLightPass, FragmentLocation as DirLightLocations } from './passes/light/directional';
 import { Scene } from './scene';
+import { halton2d } from './util/halton';
+import { AccumulatePass } from './passes/taa';
+import { isJitterPass } from './passes/jitterPass';
 
 const TrackedMembers = {
     Size: true,
+    TaaEnabled: true,
     TaaFrame: true,
     TaaNumFrames: true,
     TaaHaltonBase1: true,
@@ -35,16 +39,27 @@ export class Renderer {
     protected _canvas: HTMLCanvasElement;
     protected _resizeObserver: ResizeObserver;
     protected _size: vec2;
+    protected _sizeFactor = 1;
 
     protected _dirty = new Dirty(TrackedMembers);
     protected _camera: Camera;
-    protected _framebuffers: Framebuffer[] = [];
     protected _lastFrame = 0;
+
+    protected _framebuffers: Framebuffer[] = [];
+    protected _accumulateBuffer: Framebuffer;
 
     protected _passes: RenderPass<any>[] = [];
     protected _geometryPass: GeometryPass;
     protected _dirLightPass: DirectionalLightPass;
+    protected _accumulatePass: AccumulatePass;
     protected _blitPass: BlitPass;
+
+    protected _taaEnabled = true;
+    protected _taaFrame = 0;
+    protected _taaNumFrames = 64;
+    protected _taaHaltonBase1 = 2;
+    protected _taaHaltonBase2 = 3;
+    protected _taaKernel: vec2[];
 
     public constructor(gl: WebGL2RenderingContext) {
         this._gl = gl;
@@ -62,10 +77,16 @@ export class Renderer {
 
         const geom = this.setupGeometryBuffer();
         this.setupGeometryPass(geom.fbo);
-        const lightFbo = this.setupLightBuffer();
-        this.setupDirLightPass(lightFbo, geom.color, geom.position, geom.normal);
+
+        const light = this.setupSingleChannelBuffer('Shading');
+        this.setupDirLightPass(light.fbo, geom.color, geom.position, geom.normal);
+
+        const accumulate = this.setupSingleChannelBuffer('TAA');
+        this._accumulateBuffer = accumulate.fbo;
+        this.setupAccumulatePass(accumulate.fbo, light.texture);
+
         this.setupBlitPass(
-            lightFbo, this._gl.COLOR_ATTACHMENT0 + DirLightLocations.Color,
+            accumulate.fbo, this._gl.COLOR_ATTACHMENT0 + DirLightLocations.Color,
             canvasFbo, this._gl.BACK
         );
 
@@ -76,7 +97,7 @@ export class Renderer {
     }
 
     private setupGeometryBuffer() {
-        const fbo = new Framebuffer(this._gl, "Forward");
+        const fbo = new Framebuffer(this._gl, 'Forward');
         const c0 = this._gl.COLOR_ATTACHMENT0;
         const color = this.createTex(Formats.RGBA);
         const position = this.createTex(Formats.RGBA16F);
@@ -94,7 +115,7 @@ export class Renderer {
     }
 
     private setupGeometryPass(target: Framebuffer) {
-        const pass = new GeometryPass(this._gl, "Geometry Forward");
+        const pass = new GeometryPass(this._gl, 'Geometry Forward');
         pass.initialize();
         pass.target = target;
         pass.preDraw = () => {
@@ -105,18 +126,19 @@ export class Renderer {
         this._geometryPass = pass;
     }
 
-    private setupLightBuffer() {
-        const fbo = new Framebuffer(this._gl, "Shading");
+    private setupSingleChannelBuffer(name: string) {
+        const fbo = new Framebuffer(this._gl, name);
+        const texture = this.createTex(Formats.RGBA);
         const c0 = this._gl.COLOR_ATTACHMENT0;
         fbo.initialize([
-            { slot: c0 + DirLightLocations.Color, texture: this.createTex(Formats.RGBA) },
+            { slot: c0 + DirLightLocations.Color, texture },
         ]);
         this._framebuffers.push(fbo);
-        return fbo;
+        return { fbo, texture };
     }
 
     private setupDirLightPass(target: Framebuffer, color: Texture, position: Texture, normal: Texture) {
-        const pass = new DirectionalLightPass(this._gl, "Directional Light");
+        const pass = new DirectionalLightPass(this._gl, 'Directional Light');
         pass.initialize();
         pass.target = target;
 
@@ -133,6 +155,27 @@ export class Renderer {
         pass.preDraw = () => drawBuffers(this._gl, 0b1);
         this._passes.push(pass);
         this._dirLightPass = pass;
+    }
+
+    private setupAccumulatePass(target: Framebuffer, input: Texture) {
+        const pass = new AccumulatePass(this._gl, 'TAA Accumulate');
+        pass.initialize();
+        pass.target = target;
+
+        input.minFilter = this._gl.NEAREST;
+        input.magFilter = this._gl.NEAREST;
+        pass.input = input;
+
+        pass.preDraw = () => {
+            this._gl.enable(this._gl.BLEND);
+            this._gl.blendFunc(this._gl.SRC_ALPHA, this._gl.ONE_MINUS_SRC_ALPHA);
+        };
+        pass.postDraw = () => {
+            this._gl.disable(this._gl.BLEND);
+        };
+
+        this._passes.push(pass);
+        this._accumulatePass = pass;
     }
 
     private setupBlitPass(srcFbo: Framebuffer, srcBuffer: GLenum, dstFbo: Framebuffer, dstBuffer: GLenum) {
@@ -160,9 +203,48 @@ export class Renderer {
                 fbo.size = this._size;
             }
         }
-        this._dirty.reset();
 
-        if (this._camera.timestamp > this._lastFrame) {
+        const cameraChanged = this._camera.timestamp > this._lastFrame;
+        if (this._taaEnabled) {
+            const taaSettingsChanged =
+                this._dirty.get('TaaEnabled') ||
+                this._dirty.get('TaaNumFrames') ||
+                this._dirty.get('TaaHaltonBase1') ||
+                this._dirty.get('TaaHaltonBase2');
+            if(taaSettingsChanged) {
+                this._taaKernel = halton2d(
+                    this._taaHaltonBase1,
+                    this._taaHaltonBase2,
+                    this._taaNumFrames);
+            }
+
+            if(taaSettingsChanged || cameraChanged)
+            {
+                this._taaFrame = 0;
+                this._dirty.set('TaaFrame');
+                this._accumulateBuffer.clear();
+            }
+
+            if(this._dirty.get('TaaFrame')) {
+                let ndcOffset = this._taaFrame === 0 ?
+                    vec2.create() :
+                    vec2.clone(this._taaKernel[this._taaFrame - 1]);
+
+                // loop around at 0.5 to -0.5
+                if(ndcOffset[0] > 0.5) ndcOffset[0] -= 1;
+                if(ndcOffset[1] > 0.5) ndcOffset[1] -= 1;
+
+                for (const pass of this._passes) {
+                    if (isJitterPass(pass)) {
+                        pass.ndcOffset = ndcOffset;
+                    }
+                }
+
+                this._accumulatePass.frame = this._taaFrame;
+            }
+        }
+
+        if (cameraChanged) {
             const view = this._camera.view;
             const projection = this._camera.projection;
             for (const pass of this._passes) {
@@ -178,6 +260,7 @@ export class Renderer {
             if (pass.prepare()) shouldRun = true;
         }
 
+        this._dirty.reset();
         return shouldRun;
     }
 
@@ -187,10 +270,18 @@ export class Renderer {
         }
 
         this._lastFrame = time;
+        if(this._taaEnabled) {
+            this._taaFrame++;
+            if(this._taaFrame < this._taaNumFrames)
+                this._dirty.set('TaaFrame');
+        }
     }
 
     protected _resize() {
-        const newSize = vec2.fromValues(this._canvas.clientWidth, this._canvas.clientHeight);
+        const newSize = vec2.fromValues(
+            Math.floor(this._canvas.clientWidth * window.devicePixelRatio * this._sizeFactor),
+            Math.floor(this._canvas.clientHeight * window.devicePixelRatio * this._sizeFactor)
+        );
 
         this._size = newSize;
         this._camera.aspect = this._size[0] / this._size[1];
@@ -251,8 +342,34 @@ export class Renderer {
         return views;
     }
 
-    public setDebugView(debugView: DebugView) {
-        this._blitPass.readTarget = debugView.target;
-        this._blitPass.readBuffer = debugView.buffer;
+    public set debugView(v: DebugView) {
+        this._blitPass.readTarget = v.target;
+        this._blitPass.readBuffer = v.buffer;
+    }
+
+    public set sizeFactor(v: number) {
+        this._sizeFactor = v;
+        this._resize();
+    }
+
+    public set taaEnabled(v: boolean) {
+        this._taaEnabled = v;
+        this._dirty.set('TaaEnabled');
+    }
+
+    public set taaNumFrames(v: number) {
+        this._taaNumFrames = v;
+        this._dirty.set('TaaNumFrames');
+    }
+
+    public set taaHaltonSequence(v: [number, number]) {
+        this._taaHaltonBase1 = v[0];
+        this._dirty.set('TaaHaltonBase1');
+        this._taaHaltonBase2 = v[1];
+        this._dirty.set('TaaHaltonBase2');
+    }
+
+    public get taaFrame() {
+        return this._taaFrame;
     }
 }

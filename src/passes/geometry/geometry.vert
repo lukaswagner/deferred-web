@@ -12,6 +12,8 @@ uniform mat4 u_view;
 uniform mat4 u_projection;
 uniform bool u_instanced;
 uniform int u_colorMode;
+uniform vec2 u_ndcOffset;
+uniform vec2 u_resolutionInverse;
 
 out vec4 v_worldPosition;
 out vec4 v_worldNormal;
@@ -57,5 +59,7 @@ void main()
     v_viewNormal = u_projection * u_view * v_worldNormal;
     v_viewNormal = normalize(v_viewNormal);
 
-    gl_Position = v_viewPosition;
+    vec4 pos = v_viewPosition / v_viewPosition.w;
+    vec2 offset = u_ndcOffset * u_resolutionInverse * 2.;
+    gl_Position = pos + vec4(offset, 0, 0);
 }
