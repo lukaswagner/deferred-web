@@ -2,6 +2,7 @@ import { mat4, vec3, vec4 } from "gl-matrix"
 import { ColorMode, Geometry } from "./geometry/geometry"
 import { createCube } from "./geometry/base/cube"
 import { create3dGrid } from "./geometry/instance/3dGrid"
+import { createSphere } from "./geometry/base/sphere"
 
 export type Scene = {
     geometry?: Geometry[],
@@ -18,7 +19,8 @@ export type Scene = {
 
 export function createDebugScene(gl: WebGL2RenderingContext): Scene {
     const cubesMat = mat4.create();
-    mat4.scale(cubesMat, cubesMat, [0.2, 0.2, 0.2]);
+    mat4.translate(cubesMat, cubesMat, [0, -0.75, 0]);
+    mat4.scale(cubesMat, cubesMat, [0.1, 0.1, 0.1]);
     const cubes: Geometry = {
         base: createCube(gl),
         model: cubesMat,
@@ -26,22 +28,22 @@ export function createDebugScene(gl: WebGL2RenderingContext): Scene {
         colorMode: ColorMode.InstanceOnly,
     };
 
-    const whiteCubeMat = mat4.create();
-    mat4.translate(whiteCubeMat, whiteCubeMat, [0, 2, 0]);
-    mat4.scale(whiteCubeMat, whiteCubeMat, [0.4, 0.4, 0.4]);
-    const whiteCube: Geometry = {
-        base: createCube(gl),
-        model: whiteCubeMat,
+    const sphereMat = mat4.create();
+    mat4.translate(sphereMat, sphereMat, [0, 0.75, 0]);
+    mat4.scale(sphereMat, sphereMat, [0.5, 0.5, 0.5]);
+    const sphere: Geometry = {
+        base: createSphere(gl),
+        model: sphereMat,
     };
 
     return {
-        geometry: [cubes, whiteCube],
+        geometry: [cubes, sphere],
         light: {
             ambient: [
                 { color: [1, 1, 1, 0.2] }
             ],
             directional: [
-                { dir: [-2, -5, -1], color: [0.5, 1, 1, 1] },
+                { dir: [-2, -5, -1], color: [0.3, 1, 1, 0.5] },
                 { dir: [3, -2, -3], color: [1, 0, 1, 0.5] },
             ]
         }

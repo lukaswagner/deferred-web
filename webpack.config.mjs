@@ -46,6 +46,10 @@ export default function () {
                         loader: 'webpack-glsl-loader'
                     },
                 },
+                {
+                    test: /\.obj$/,
+                    type: 'asset/source',
+                },
             ]
         },
         devServer: { hot: false },
