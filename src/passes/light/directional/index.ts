@@ -1,7 +1,12 @@
 import { vec3, vec4 } from 'gl-matrix';
 import { BaseLightPass } from '../base';
 
-type Data = { dir: vec3, color: vec4 }[];
+type Data = {
+    /** direction */
+    dir: vec3,
+    /** rgb and intensity */
+    color: vec4
+}[];
 
 export class DirectionalLightPass extends BaseLightPass {
     public initialize(): boolean {

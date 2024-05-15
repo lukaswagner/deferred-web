@@ -1,8 +1,7 @@
-import { RenderPass } from '../renderPass';
-import { Uniforms } from '../../util/uniforms';
 import { Framebuffer } from '../../framebuffers/framebuffer';
 import { GL } from '../../util/gl/gl';
 import { replaceDefines } from '../../util/defines';
+import { ShaderRenderPass } from '../shaderRenderPass';
 
 const tracked = {
     Target: true,
@@ -17,29 +16,18 @@ type Options = {
     fragSrc?: string,
 }
 
-export class FullscreenPass<T extends Tracked = Tracked> extends RenderPass<T> {
+export class FullscreenPass<T extends Tracked = Tracked> extends ShaderRenderPass<T> {
     protected _buffer: WebGLBuffer;
-    protected _program: WebGLProgram;
-    protected _vert: WebGLShader;
-    protected _frag: WebGLShader;
     protected _target: Framebuffer;
-
-    protected _uniforms: Uniforms;
 
     public constructor(gl: GL, trackedMembers: T = tracked as any as T, name?: string) {
         super(gl, trackedMembers, name);
     }
 
     public initialize(options?: Options) {
-        this._vert = this._gl.createShader(this._gl.VERTEX_SHADER);
-        this.compileVert();
-
-        this._frag = this._gl.createShader(this._gl.FRAGMENT_SHADER);
+        this.setupProgram();
+        this.compileVert(require('./fullscreen.vert') as string);
         this.compileFrag(options?.fragSrc);
-
-        this._program = this._gl.createProgram();
-        this._gl.attachShader(this._program, this._vert);
-        this._gl.attachShader(this._program, this._frag);
         this.linkProgram();
 
         this._buffer = this._gl.createBuffer();
@@ -54,31 +42,12 @@ export class FullscreenPass<T extends Tracked = Tracked> extends RenderPass<T> {
         return true;
     }
 
-    protected compileVert() {
-        const src = require('./fullscreen.vert') as string;
-        this._gl.shaderSource(this._vert, src);
-        this._gl.compileShader(this._vert);
-        if (!this._gl.getShaderParameter(this._vert, this._gl.COMPILE_STATUS))
-            console.log(this._gl.getShaderInfoLog(this._vert));
-    }
-
     protected compileFrag(src?: string) {
         if(!src) src = require('./fullscreen.frag') as string;
         src = replaceDefines(src, [
             { key: 'COLOR_LOCATION', value: FragmentLocation.Color }
         ]);
-        this._gl.shaderSource(this._frag, src);
-        this._gl.compileShader(this._frag);
-        if (!this._gl.getShaderParameter(this._frag, this._gl.COMPILE_STATUS))
-            console.log(this._gl.getShaderInfoLog(this._frag));
-    }
-
-    protected linkProgram() {
-        this._gl.linkProgram(this._program);
-        if (!this._gl.getProgramParameter(this._program, this._gl.LINK_STATUS))
-            console.log(this._gl.getProgramInfoLog(this._program));
-
-        this._uniforms = new Uniforms(this._gl, this._program);
+        super.compileFrag(src);
     }
 
     public prepare(): boolean {

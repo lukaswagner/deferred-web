@@ -9,7 +9,6 @@ const tracked = {
     Target: false,
     Postion: false,
     Normal: false,
-    Color: false,
 }
 
 export enum FragmentLocation {
@@ -22,7 +21,6 @@ export class BaseLightPass extends FullscreenPass<typeof tracked> {
 
     protected _positionTex: Texture;
     protected _normalTex: Texture;
-    protected _colorTex: Texture;
 
     protected _data: UniformBlock;
     protected _size = 0;
@@ -60,7 +58,6 @@ export class BaseLightPass extends FullscreenPass<typeof tracked> {
         this._gl.useProgram(this._program);
         this._gl.uniform1i(this._uniforms.get('u_position'), 0);
         this._gl.uniform1i(this._uniforms.get('u_normal'), 1);
-        this._gl.uniform1i(this._uniforms.get('u_color'), 2);
         this._gl.useProgram(null);
     }
 
@@ -79,13 +76,11 @@ export class BaseLightPass extends FullscreenPass<typeof tracked> {
         this._data.bind();
         this._positionTex?.bind(this._gl.TEXTURE0);
         this._normalTex?.bind(this._gl.TEXTURE1);
-        this._colorTex?.bind(this._gl.TEXTURE2);
     }
 
     protected _tearDown(): void {
         this._positionTex?.unbind(this._gl.TEXTURE0);
         this._normalTex?.unbind(this._gl.TEXTURE1);
-        this._colorTex?.unbind(this._gl.TEXTURE2);
         super._tearDown();
     }
 
@@ -99,11 +94,5 @@ export class BaseLightPass extends FullscreenPass<typeof tracked> {
     {
         this._normalTex = v;
         this._dirty.set('Normal');
-    }
-
-    public set color(v: Texture)
-    {
-        this._colorTex = v;
-        this._dirty.set('Color');
     }
 }

@@ -19,6 +19,7 @@ import { AccumulatePass } from './passes/taa';
 import { isJitterPass } from './passes/jitterPass';
 import { AmbientLightPass } from './passes/light/ambient';
 import { LightMergePass } from './passes/light/merge';
+import { PointLightPass } from './passes/light/point';
 
 const TrackedMembers = {
     Size: true,
@@ -53,6 +54,7 @@ export class Renderer {
     protected _geometryPass: GeometryPass;
     protected _ambientLightPass: AmbientLightPass;
     protected _directionalLightPass: DirectionalLightPass;
+    protected _pointLightPass: PointLightPass;
     protected _accumulatePass: AccumulatePass;
     protected _blitPass: BlitPass;
 
@@ -88,6 +90,12 @@ export class Renderer {
         this._directionalLightPass = new DirectionalLightPass(this._gl, 'Directional Light');
         this.setupLightPass(this._directionalLightPass, directional.fbo);
         this._directionalLightPass.normal = geom.normal;
+
+        const point = this.setupSingleChannelBuffer('Point Light', Formats.RGBA16F);
+        this._pointLightPass = new PointLightPass(this._gl, 'Directional Light');
+        this.setupPointLightPass(this._pointLightPass, point.fbo);
+        this._pointLightPass.position = geom.position;
+        this._pointLightPass.normal = geom.normal;
 
         const merge = this.setupSingleChannelBuffer('Light Merge');
         this.setupLightMergePass(merge.fbo, ambient.texture, directional.texture, geom.color);
@@ -165,6 +173,17 @@ export class Renderer {
         pass.target = target;
 
         pass.preDraw = () => drawBuffers(this._gl, 0b1);
+        this._passes.push(pass);
+    }
+
+    private setupPointLightPass(pass: PointLightPass, target: Framebuffer) {
+        pass.initialize();
+        pass.target = target;
+
+        pass.preDraw = () => {
+            drawBuffers(this._gl, 0b1);
+            target.clear(false, false);
+        };
         this._passes.push(pass);
     }
 

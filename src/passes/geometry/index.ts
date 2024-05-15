@@ -8,6 +8,7 @@ import { drawBuffers } from '../../util/gl/drawBuffers';
 import { GL } from '../../util/gl/gl';
 import { JitterPass } from '../jitterPass';
 import { replaceDefines } from '../../util/defines';
+import { ShaderRenderPass } from '../shaderRenderPass';
 
 const tracked = {
     Target: true,
@@ -25,11 +26,8 @@ export enum FragmentLocation {
     ViewNormal,
 }
 
-export class GeometryPass extends RenderPass<typeof tracked> implements CameraPass, JitterPass {
-    protected _program: WebGLProgram;
+export class GeometryPass extends ShaderRenderPass<typeof tracked> implements CameraPass, JitterPass {
     protected _target: Framebuffer;
-
-    protected _uniforms: Uniforms;
 
     protected _model: mat4;
     protected _view: mat4;
@@ -37,7 +35,7 @@ export class GeometryPass extends RenderPass<typeof tracked> implements CameraPa
     protected _instanced: boolean;
     protected _colorMode: ColorMode;
     protected _ndcOffset = vec2.create();
-    protected _size =  vec2.create();
+    protected _size = vec2.create();
 
     protected _geometries: Geometry[] = [];
 
@@ -46,14 +44,9 @@ export class GeometryPass extends RenderPass<typeof tracked> implements CameraPa
     }
 
     public initialize() {
-        const vert = this._gl.createShader(this._gl.VERTEX_SHADER);
-        const vertSrc = require('./geometry.vert') as string;
-        this._gl.shaderSource(vert, vertSrc);
-        this._gl.compileShader(vert);
-        if(!this._gl.getShaderParameter(vert, this._gl.COMPILE_STATUS))
-            console.log(this._gl.getShaderInfoLog(vert));
+        this.setupProgram();
+        this.compileVert(require('./geometry.vert') as string);
 
-        const frag = this._gl.createShader(this._gl.FRAGMENT_SHADER);
         let fragSrc = require('./geometry.frag') as string;
         fragSrc = replaceDefines(fragSrc, [
             { key: 'WORLD_POSITION_LOCATION', value: FragmentLocation.WorldPosition },
@@ -62,19 +55,9 @@ export class GeometryPass extends RenderPass<typeof tracked> implements CameraPa
             { key: 'VIEW_NORMAL_LOCATION', value: FragmentLocation.ViewNormal },
             { key: 'COLOR_LOCATION', value: FragmentLocation.Color },
         ]);
-        this._gl.shaderSource(frag, fragSrc);
-        this._gl.compileShader(frag);
-        if(!this._gl.getShaderParameter(frag, this._gl.COMPILE_STATUS))
-            console.log(this._gl.getShaderInfoLog(frag));
+        this.compileFrag(fragSrc);
 
-        this._program = this._gl.createProgram();
-        this._gl.attachShader(this._program, vert);
-        this._gl.attachShader(this._program, frag);
-        this._gl.linkProgram(this._program);
-        if(!this._gl.getProgramParameter(this._program, this._gl.LINK_STATUS))
-            console.log(this._gl.getProgramInfoLog(this._program));
-
-        this._uniforms = new Uniforms(this._gl, this._program);
+        this.linkProgram();
 
         this._dirty.setAll();
         return true;

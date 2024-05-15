@@ -1,7 +1,10 @@
 import { vec4 } from 'gl-matrix';
 import { BaseLightPass } from '../base';
 
-type Data = { color: vec4 }[];
+type Data = {
+    /** rgb and intensity */
+    color: vec4
+}[];
 
 export class AmbientLightPass extends BaseLightPass {
     public initialize(): boolean {
