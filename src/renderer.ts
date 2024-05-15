@@ -82,11 +82,12 @@ export class Renderer {
 
         const ambient = this.setupSingleChannelBuffer('Ambient Light', Formats.RGBA16F);
         this._ambientLightPass = new AmbientLightPass(this._gl, 'Ambient Light');
-        this.setupLightPass(this._ambientLightPass, ambient.fbo, geom.color, geom.position, geom.normal);
+        this.setupLightPass(this._ambientLightPass, ambient.fbo);
 
         const directional = this.setupSingleChannelBuffer('Directional Light', Formats.RGBA16F);
         this._directionalLightPass = new DirectionalLightPass(this._gl, 'Directional Light');
-        this.setupLightPass(this._directionalLightPass, directional.fbo, geom.color, geom.position, geom.normal);
+        this.setupLightPass(this._directionalLightPass, directional.fbo);
+        this._directionalLightPass.normal = geom.normal;
 
         const merge = this.setupSingleChannelBuffer('Light Merge');
         this.setupLightMergePass(merge.fbo, ambient.texture, directional.texture, geom.color);
@@ -109,9 +110,19 @@ export class Renderer {
     private setupGeometryBuffer() {
         const fbo = new Framebuffer(this._gl, 'Forward');
         const c0 = this._gl.COLOR_ATTACHMENT0;
+
         const color = this.createTex(Formats.RGBA);
+        color.minFilter = this._gl.NEAREST;
+        color.magFilter = this._gl.NEAREST;
+
         const position = this.createTex(Formats.RGBA16F);
+        position.minFilter = this._gl.NEAREST;
+        position.magFilter = this._gl.NEAREST;
+
         const normal = this.createTex(Formats.RGBA16F);
+        normal.minFilter = this._gl.NEAREST;
+        normal.magFilter = this._gl.NEAREST;
+
         fbo.initialize([
             { slot: c0 + GeomLocations.Color, texture: color },
             { slot: c0 + GeomLocations.WorldPosition, texture: position },
@@ -139,6 +150,8 @@ export class Renderer {
     private setupSingleChannelBuffer(name: string, format = Formats.RGBA) {
         const fbo = new Framebuffer(this._gl, name);
         const texture = this.createTex(format);
+        texture.minFilter = this._gl.NEAREST;
+        texture.magFilter = this._gl.NEAREST;
         const c0 = this._gl.COLOR_ATTACHMENT0;
         fbo.initialize([
             { slot: c0 + LightLocations.Color, texture },
@@ -147,19 +160,9 @@ export class Renderer {
         return { fbo, texture };
     }
 
-    private setupLightPass(pass: BaseLightPass, target: Framebuffer, color: Texture, position: Texture, normal: Texture) {
+    private setupLightPass(pass: BaseLightPass, target: Framebuffer) {
         pass.initialize();
         pass.target = target;
-
-        color.minFilter = this._gl.NEAREST;
-        color.magFilter = this._gl.NEAREST;
-        pass.color = color;
-        position.minFilter = this._gl.NEAREST;
-        position.magFilter = this._gl.NEAREST;
-        pass.position = position;
-        normal.minFilter = this._gl.NEAREST;
-        normal.magFilter = this._gl.NEAREST;
-        pass.normal = normal;
 
         pass.preDraw = () => drawBuffers(this._gl, 0b1);
         this._passes.push(pass);
@@ -170,14 +173,8 @@ export class Renderer {
         pass.initialize();
         pass.target = target;
 
-        ambient.minFilter = this._gl.NEAREST;
-        ambient.magFilter = this._gl.NEAREST;
         pass.ambient = ambient;
-        directional.minFilter = this._gl.NEAREST;
-        directional.magFilter = this._gl.NEAREST;
         pass.directional = directional;
-        color.minFilter = this._gl.NEAREST;
-        color.magFilter = this._gl.NEAREST;
         pass.color = color;
 
         this._passes.push(pass);

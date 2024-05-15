@@ -76,15 +76,15 @@ export class BaseLightPass extends FullscreenPass<typeof tracked> {
         super._setup();
 
         this._data.bind();
-        this._positionTex.bind(this._gl.TEXTURE0);
-        this._normalTex.bind(this._gl.TEXTURE1);
-        this._colorTex.bind(this._gl.TEXTURE2);
+        this._positionTex?.bind(this._gl.TEXTURE0);
+        this._normalTex?.bind(this._gl.TEXTURE1);
+        this._colorTex?.bind(this._gl.TEXTURE2);
     }
 
     protected _tearDown(): void {
-        this._positionTex.unbind(this._gl.TEXTURE0);
-        this._normalTex.unbind(this._gl.TEXTURE1);
-        this._colorTex.unbind(this._gl.TEXTURE2);
+        this._positionTex?.unbind(this._gl.TEXTURE0);
+        this._normalTex?.unbind(this._gl.TEXTURE1);
+        this._colorTex?.unbind(this._gl.TEXTURE2);
         super._tearDown();
     }
 
