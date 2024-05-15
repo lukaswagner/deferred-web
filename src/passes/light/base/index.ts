@@ -1,9 +1,7 @@
-import { vec3 } from 'gl-matrix';
 import { FullscreenPass } from '../../fullscreen';
 import { UniformBlock } from '../../../util/uniformBlock';
 import { Texture } from '../../../util/gl/texture';
 import { GL } from '../../../util/gl/gl';
-import { regexFromDelimiters } from '../../../util/regex';
 import { replaceDefines } from '../../../util/defines';
 
 const tracked = {

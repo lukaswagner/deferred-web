@@ -1,10 +1,8 @@
 #version 300 es
 precision mediump float;
 
-/* DEFINES START */
 #define DATA_SIZE 1u
 #define ENABLED 0
-/* DEFINES END */
 
 layout(location = 0) out vec4 f_color;
 
