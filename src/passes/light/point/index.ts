@@ -39,7 +39,6 @@ export enum FragmentLocation {
 
 export class PointLightPass extends ShaderRenderPass<typeof tracked> implements CameraPass, JitterPass {
     protected _origFragSrc: string;
-    protected _buffer: WebGLBuffer;
     protected _target: Framebuffer;
     protected _vao: WebGLVertexArrayObject;
 
@@ -53,6 +52,7 @@ export class PointLightPass extends ShaderRenderPass<typeof tracked> implements 
     protected _positionTex: Texture;
     protected _normalTex: Texture;
 
+    protected _buffer: WebGLBuffer;
     protected _dataSize = 1;
 
     public constructor(gl: GL, name?: string) {
@@ -66,14 +66,6 @@ export class PointLightPass extends ShaderRenderPass<typeof tracked> implements 
         this.compileVert(require('./point.vert') as string);
         this.compileFrag(this.getSrc());
         this.linkProgram();
-
-        this._buffer = this._gl.createBuffer();
-        this._gl.bindBuffer(this._gl.ARRAY_BUFFER, this._buffer);
-        const positionData = new Float32Array([0, 0, 0, 2, 2, 0]);
-        this._gl.bufferData(this._gl.ARRAY_BUFFER, positionData.buffer, this._gl.STATIC_DRAW);
-        this._gl.vertexAttribPointer(0, 2, this._gl.FLOAT, false, 0, 0);
-        this._gl.enableVertexAttribArray(0);
-        this._gl.bindBuffer(this._gl.ARRAY_BUFFER, null);
 
         this.setupUniforms();
 
@@ -125,6 +117,9 @@ export class PointLightPass extends ShaderRenderPass<typeof tracked> implements 
             this._gl.uniform2fv(
                 this._uniforms.get('u_resolutionInverse'),
                 vec2.div(vec2.create(), vec2.fromValues(1, 1), this._renderSize));
+            this._gl.uniform1f(
+                this._uniforms.get('u_aspectRatio'),
+                this._renderSize[0] / this._renderSize[1]);
         }
 
         this._gl.useProgram(null);
@@ -152,29 +147,43 @@ export class PointLightPass extends ShaderRenderPass<typeof tracked> implements 
 
         const basePosition = this._gl.createBuffer();
         this._gl.bindBuffer(this._gl.ARRAY_BUFFER, basePosition);
-        const basePositionData = new Float32Array([1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0]);
+        const basePositionData = new Float32Array([1, 0, 1, 1, 0, 0, 0, 1]);
         this._gl.bufferData(this._gl.ARRAY_BUFFER, basePositionData.buffer, this._gl.STATIC_DRAW);
+
+        this._buffer = this._gl.createBuffer();
+        this._gl.bindBuffer(this._gl.ARRAY_BUFFER, this._buffer);
+        const data = new Float32Array([
+            0, 0, 0, 1, 1, 1, 1, 0.5,
+            1, 0, 0, 1, 1, 0, 0, 0.5,
+            0, 1, 0, 1, 0, 1, 0, 0.5,
+            0, 0, 1, 1, 0, 0, 1, 0.5,
+        ]);
+        this._gl.bufferData(this._gl.ARRAY_BUFFER, data.buffer, this._gl.STATIC_DRAW);
+        this._dataSize = 4;
 
         const buffers: BufferInfo[] = [{
             buffer: basePosition,
             location: VertexLocations.basePosition,
-            size: 3,
-            type:  this._gl.FLOAT,
+            size: 2,
+            type: this._gl.FLOAT,
             divisor: 0,
         },
-        // {
-        //     buffer: instancePosition,
-        //     location: VertexLocations.instancePosition,
-        //     size: 4,
-        //     type: this._gl.FLOAT,
-        //     divisor: 0,
-        // }, {
-        //     buffer: instanceColor,
-        //     location: VertexLocations.instanceColor,
-        //     size: 4,
-        //     type:  this._gl.FLOAT,
-        //     divisor: 0,
-        // }
+        {
+            buffer: this._buffer,
+            location: VertexLocations.instancePosition,
+            size: 4,
+            type: this._gl.FLOAT,
+            divisor: 1,
+            stride: 8 * 4,
+        }, {
+            buffer: this._buffer,
+            location: VertexLocations.instanceColor,
+            size: 4,
+            type:  this._gl.FLOAT,
+            divisor: 1,
+            stride: 8 * 4,
+            offset: 4 * 4,
+        }
     ];
 
         buffers.forEach((b) => {

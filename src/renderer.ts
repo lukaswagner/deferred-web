@@ -92,10 +92,7 @@ export class Renderer {
         this._directionalLightPass.normal = geom.normal;
 
         const point = this.setupSingleChannelBuffer('Point Light', Formats.RGBA16F);
-        this._pointLightPass = new PointLightPass(this._gl, 'Directional Light');
-        this.setupPointLightPass(this._pointLightPass, point.fbo);
-        this._pointLightPass.position = geom.position;
-        this._pointLightPass.normal = geom.normal;
+        this.setupPointLightPass(point.fbo, geom.position, geom.color);
 
         const merge = this.setupSingleChannelBuffer('Light Merge');
         this.setupLightMergePass(merge.fbo, ambient.texture, directional.texture, geom.color);
@@ -176,15 +173,26 @@ export class Renderer {
         this._passes.push(pass);
     }
 
-    private setupPointLightPass(pass: PointLightPass, target: Framebuffer) {
+    private setupPointLightPass(target: Framebuffer, position: Texture, normal: Texture) {
+        const pass = new PointLightPass(this._gl, 'Directional Light');
+
         pass.initialize();
         pass.target = target;
+        pass.position = position;
+        pass.normal = normal;
 
         pass.preDraw = () => {
             drawBuffers(this._gl, 0b1);
             target.clear(false, false);
+            this._gl.enable(this._gl.BLEND);
+            this._gl.blendFunc(this._gl.ONE, this._gl.ONE);
         };
+        pass.postDraw = () => {
+            this._gl.disable(this._gl.BLEND);
+        };
+
         this._passes.push(pass);
+        this._pointLightPass = pass;
     }
 
     private setupLightMergePass(target: Framebuffer, ambient: Texture, directional: Texture, color: Texture) {
