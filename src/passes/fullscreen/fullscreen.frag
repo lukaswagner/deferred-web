@@ -1,6 +1,10 @@
 #version 300 es
 precision mediump float;
 
+/* DEFINES START */
+#define COLOR_LOCATION 0
+/* DEFINES END */
+
 layout(location = COLOR_LOCATION) out vec4 f_color;
 
 in vec2 v_uv;

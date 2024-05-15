@@ -1,6 +1,14 @@
 #version 300 es
 precision mediump float;
 
+/* DEFINES START */
+#define WORLD_POSITION_LOCATION 0
+#define WORLD_NORMAL_LOCATION 1
+#define VIEW_POSITION_LOCATION 2
+#define VIEW_NORMAL_LOCATION 3
+#define COLOR_LOCATION 4
+/* DEFINES END */
+
 layout(location = WORLD_POSITION_LOCATION) out vec4 f_worldPosition;
 layout(location = WORLD_NORMAL_LOCATION) out vec4 f_worldNormal;
 layout(location = VIEW_POSITION_LOCATION) out vec4 f_viewPosition;

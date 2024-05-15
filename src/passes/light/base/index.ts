@@ -3,6 +3,8 @@ import { FullscreenPass } from '../../fullscreen';
 import { UniformBlock } from '../../../util/uniformBlock';
 import { Texture } from '../../../util/gl/texture';
 import { GL } from '../../../util/gl/gl';
+import { regexFromDelimiters } from '../../../util/regex';
+import { replaceDefines } from '../../../util/defines';
 
 const tracked = {
     Data: false,
@@ -39,9 +41,10 @@ export class BaseLightPass extends FullscreenPass<typeof tracked> {
     }
 
     protected getSrc() {
-        let src = this._origFragSrc;
-        src = src.replaceAll('DATA_SIZE', this._size > 0 ? this._size.toString() : '1');
-        src = src.replaceAll('ENABLED', this._size > 0 ? '1' : '0');
+        let src = replaceDefines(this._origFragSrc, [
+            { key: 'DATA_SIZE', value: Math.max(this._size, 1), suffix: 'u' },
+            { key: 'ENABLED', value: +(this._size > 0) }
+        ]);
         return src;
     }
 

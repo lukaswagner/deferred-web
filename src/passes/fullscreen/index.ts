@@ -2,6 +2,7 @@ import { RenderPass } from '../renderPass';
 import { Uniforms } from '../../util/uniforms';
 import { Framebuffer } from '../../framebuffers/framebuffer';
 import { GL } from '../../util/gl/gl';
+import { replaceDefines } from '../../util/defines';
 
 const tracked = {
     Target: true,
@@ -63,7 +64,9 @@ export class FullscreenPass<T extends Tracked = Tracked> extends RenderPass<T> {
 
     protected compileFrag(src?: string) {
         if(!src) src = require('./fullscreen.frag') as string;
-        src = src.replaceAll('COLOR_LOCATION', FragmentLocation.Color.toString());
+        src = replaceDefines(src, [
+            { key: 'COLOR_LOCATION', value: FragmentLocation.Color }
+        ]);
         this._gl.shaderSource(this._frag, src);
         this._gl.compileShader(this._frag);
         if (!this._gl.getShaderParameter(this._frag, this._gl.COMPILE_STATUS))

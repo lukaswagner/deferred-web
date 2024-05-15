@@ -1,9 +1,14 @@
 #version 300 es
 precision mediump float;
 
-layout(location = 0) out vec4 fragColor;
+/* DEFINES START */
+#define DATA_SIZE 1u
+#define ENABLED 0
+/* DEFINES END */
 
-const uint c_dataSize = DATA_SIZEu;
+layout(location = 0) out vec4 f_color;
+
+const uint c_dataSize = DATA_SIZE;
 
 uniform data {
     vec4 color[c_dataSize];
@@ -19,8 +24,8 @@ void main()
         light += u_data.color[i].rgb * u_data.color[i].a;
     }
 
-    fragColor = vec4(light, 1);
+    f_color = vec4(light, 1);
 #else
-    fragColor = vec4(0);
+    f_color = vec4(0);
 #endif
 }

@@ -7,6 +7,7 @@ import { Framebuffer } from '../../framebuffers/framebuffer';
 import { drawBuffers } from '../../util/gl/drawBuffers';
 import { GL } from '../../util/gl/gl';
 import { JitterPass } from '../jitterPass';
+import { replaceDefines } from '../../util/defines';
 
 const tracked = {
     Target: true,
@@ -54,11 +55,13 @@ export class GeometryPass extends RenderPass<typeof tracked> implements CameraPa
 
         const frag = this._gl.createShader(this._gl.FRAGMENT_SHADER);
         let fragSrc = require('./geometry.frag') as string;
-        fragSrc = fragSrc.replaceAll('WORLD_POSITION_LOCATION', FragmentLocation.WorldPosition.toString());
-        fragSrc = fragSrc.replaceAll('WORLD_NORMAL_LOCATION', FragmentLocation.WorldNormal.toString());
-        fragSrc = fragSrc.replaceAll('VIEW_POSITION_LOCATION', FragmentLocation.ViewPosition.toString());
-        fragSrc = fragSrc.replaceAll('VIEW_NORMAL_LOCATION', FragmentLocation.ViewNormal.toString());
-        fragSrc = fragSrc.replaceAll('COLOR_LOCATION', FragmentLocation.Color.toString());
+        fragSrc = replaceDefines(fragSrc, [
+            { key: 'WORLD_POSITION_LOCATION', value: FragmentLocation.WorldPosition },
+            { key: 'WORLD_NORMAL_LOCATION', value: FragmentLocation.WorldNormal },
+            { key: 'VIEW_POSITION_LOCATION', value: FragmentLocation.ViewPosition },
+            { key: 'VIEW_NORMAL_LOCATION', value: FragmentLocation.ViewNormal },
+            { key: 'COLOR_LOCATION', value: FragmentLocation.Color },
+        ]);
         this._gl.shaderSource(frag, fragSrc);
         this._gl.compileShader(frag);
         if(!this._gl.getShaderParameter(frag, this._gl.COMPILE_STATUS))
