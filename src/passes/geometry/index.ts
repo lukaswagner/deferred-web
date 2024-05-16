@@ -12,8 +12,7 @@ import { ShaderRenderPass } from '../shaderRenderPass';
 
 const tracked = {
     Target: true,
-    View: true,
-    Projection: true,
+    ViewProjection: true,
     Geometry: true,
     NdcOffset: true,
 }
@@ -30,8 +29,7 @@ export class GeometryPass extends ShaderRenderPass<typeof tracked> implements Ca
     protected _target: Framebuffer;
 
     protected _model: mat4;
-    protected _view: mat4;
-    protected _projection: mat4;
+    protected _viewProjection: mat4;
     protected _instanced: boolean;
     protected _colorMode: ColorMode;
     protected _ndcOffset = vec2.create();
@@ -64,14 +62,9 @@ export class GeometryPass extends ShaderRenderPass<typeof tracked> implements Ca
     }
 
     public prepare(): boolean {
-        if (this._dirty.get('View')) {
+        if (this._dirty.get('ViewProjection')) {
             this._gl.useProgram(this._program);
-            this._gl.uniformMatrix4fv(this._uniforms.get('u_view'), false, this._view);
-        }
-
-        if (this._dirty.get('Projection')) {
-            this._gl.useProgram(this._program);
-            this._gl.uniformMatrix4fv(this._uniforms.get('u_projection'), false, this._projection);
+            this._gl.uniformMatrix4fv(this._uniforms.get('u_viewProjection'), false, this._viewProjection);
         }
 
         if (this._dirty.get('NdcOffset')) {
@@ -185,15 +178,17 @@ export class GeometryPass extends ShaderRenderPass<typeof tracked> implements Ca
         this._dirty.set('Target');
     }
 
-    public set view(v: mat4) {
-        this._view = v;
-        this._dirty.set('View');
+    public set view(v: mat4) { }
+    public set projection(v: mat4) { }
+
+    public set viewProjection(v: mat4) {
+        this._viewProjection = v;
+        this._dirty.set('ViewProjection');
     }
 
-    public set projection(v: mat4) {
-        this._projection = v;
-        this._dirty.set('Projection');
-    }
+    public set viewInverse(v: mat4) { }
+    public set projectionInverse(v: mat4) { }
+    public set viewProjectionInverse(v: mat4) { }
 
     public set ndcOffset(v: vec2) {
         this._ndcOffset = v;

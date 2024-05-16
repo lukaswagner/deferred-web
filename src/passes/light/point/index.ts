@@ -19,8 +19,8 @@ type Data = {
 const tracked = {
     Data: false,
     Target: false,
-    View: true,
-    Projection: true,
+    ViewProjection: true,
+    ViewInverse: true,
     Geometry: true,
     NdcOffset: true,
     Postion: false,
@@ -43,8 +43,8 @@ export class PointLightPass extends ShaderRenderPass<typeof tracked> implements 
     protected _vao: WebGLVertexArrayObject;
 
     protected _model: mat4;
-    protected _view: mat4;
-    protected _projection: mat4;
+    protected _viewProjection: mat4;
+    protected _viewInverse: mat4;
 
     protected _ndcOffset = vec2.create();
     protected _renderSize = vec2.create();
@@ -96,14 +96,14 @@ export class PointLightPass extends ShaderRenderPass<typeof tracked> implements 
     }
 
     public prepare(): boolean {
-        if (this._dirty.get('View')) {
+        if (this._dirty.get('ViewProjection')) {
             this._gl.useProgram(this._program);
-            this._gl.uniformMatrix4fv(this._uniforms.get('u_view'), false, this._view);
+            this._gl.uniformMatrix4fv(this._uniforms.get('u_viewProjection'), false, this._viewProjection);
         }
 
-        if (this._dirty.get('Projection')) {
+        if (this._dirty.get('ViewInverse')) {
             this._gl.useProgram(this._program);
-            this._gl.uniformMatrix4fv(this._uniforms.get('u_projection'), false, this._projection);
+            this._gl.uniformMatrix4fv(this._uniforms.get('u_viewInverse'), false, this._viewInverse);
         }
 
         if (this._dirty.get('NdcOffset')) {
@@ -117,9 +117,6 @@ export class PointLightPass extends ShaderRenderPass<typeof tracked> implements 
             this._gl.uniform2fv(
                 this._uniforms.get('u_resolutionInverse'),
                 vec2.div(vec2.create(), vec2.fromValues(1, 1), this._renderSize));
-            this._gl.uniform1f(
-                this._uniforms.get('u_aspectRatio'),
-                this._renderSize[0] / this._renderSize[1]);
         }
 
         this._gl.useProgram(null);
@@ -209,15 +206,21 @@ export class PointLightPass extends ShaderRenderPass<typeof tracked> implements 
         this._dirty.set('Target');
     }
 
-    public set view(v: mat4) {
-        this._view = v;
-        this._dirty.set('View');
+    public set view(v: mat4) { }
+    public set projection(v: mat4) { }
+
+    public set viewProjection(v: mat4) {
+        this._viewProjection = v;
+        this._dirty.set('ViewProjection');
     }
 
-    public set projection(v: mat4) {
-        this._projection = v;
-        this._dirty.set('Projection');
+    public set viewInverse(v: mat4) {
+        this._viewInverse = v;
+        this._dirty.set('ViewInverse');
     }
+
+    public set projectionInverse(v: mat4) { }
+    public set viewProjectionInverse(v: mat4) { }
 
     public set ndcOffset(v: vec2) {
         this._ndcOffset = v;

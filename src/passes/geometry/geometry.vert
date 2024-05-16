@@ -8,8 +8,7 @@ in mat4 a_instanceMatrix;
 in vec3 a_instanceColor;
 
 uniform mat4 u_model;
-uniform mat4 u_view;
-uniform mat4 u_projection;
+uniform mat4 u_viewProjection;
 uniform bool u_instanced;
 uniform int u_colorMode;
 uniform vec2 u_ndcOffset;
@@ -55,8 +54,8 @@ void main()
     v_worldNormal = u_model * v_worldNormal;
     v_worldNormal = normalize(v_worldNormal);
 
-    v_viewPosition = u_projection * u_view * v_worldPosition;
-    v_viewNormal = u_projection * u_view * v_worldNormal;
+    v_viewPosition = u_viewProjection * v_worldPosition;
+    v_viewNormal = u_viewProjection * v_worldNormal;
     v_viewNormal = normalize(v_viewNormal);
 
     vec4 pos = v_viewPosition / v_viewPosition.w;

@@ -7,7 +7,7 @@ import { Formats, TextureFormat } from './util/gl/formats';
 import { GeometryPass, FragmentLocation as GeomLocations } from './passes/geometry';
 import { CanvasFramebuffer } from './framebuffers/canvasFramebuffer';
 import { BlitPass } from './passes/blitPass';
-import { vec2 } from 'gl-matrix';
+import { mat4, vec2 } from 'gl-matrix';
 import { Geometry } from './geometry/geometry';
 import { Dirty } from './util/dirty';
 import { drawBuffers } from './util/gl/drawBuffers';
@@ -297,10 +297,18 @@ export class Renderer {
         if (cameraChanged) {
             const view = this._camera.view;
             const projection = this._camera.projection;
+            const viewProjection = mat4.mul(mat4.create(), projection, view);
+            const viewInverse = mat4.invert(mat4.create(), view);
+            const projectionInverse = mat4.invert(mat4.create(), projection);
+            const viewProjectionInverse = mat4.invert(mat4.create(), viewProjection);
             for (const pass of this._passes) {
                 if (isCameraPass(pass)) {
                     pass.view = view;
                     pass.projection = projection;
+                    pass.viewProjection = viewProjection;
+                    pass.viewInverse = viewInverse;
+                    pass.projectionInverse = projectionInverse;
+                    pass.viewProjectionInverse = viewProjectionInverse;
                 }
             }
             shouldRun = true;
