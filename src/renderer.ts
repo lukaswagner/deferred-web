@@ -92,10 +92,10 @@ export class Renderer {
         this._directionalLightPass.normal = geom.normal;
 
         const point = this.setupSingleChannelBuffer('Point Light', Formats.RGBA16F);
-        this.setupPointLightPass(point.fbo, geom.position, geom.color);
+        this.setupPointLightPass(point.fbo, geom.position, geom.normal);
 
         const merge = this.setupSingleChannelBuffer('Light Merge');
-        this.setupLightMergePass(merge.fbo, ambient.texture, directional.texture, geom.color);
+        this.setupLightMergePass(merge.fbo, ambient.texture, directional.texture, point.texture, geom.color);
 
         const accumulate = this.setupSingleChannelBuffer('TAA');
         this._accumulateBuffer = accumulate.fbo;
@@ -185,23 +185,29 @@ export class Renderer {
             drawBuffers(this._gl, 0b1);
             target.clear(false, false);
             this._gl.enable(this._gl.BLEND);
-            this._gl.blendFunc(this._gl.ONE, this._gl.ONE);
+            this._gl.blendFuncSeparate(this._gl.SRC_ALPHA, this._gl.ONE, this._gl.ONE, this._gl.ONE);
         };
         pass.postDraw = () => {
             this._gl.disable(this._gl.BLEND);
+            this._gl.blendFuncSeparate(this._gl.ONE, this._gl.ZERO, this._gl.ONE, this._gl.ZERO);
         };
 
         this._passes.push(pass);
         this._pointLightPass = pass;
     }
 
-    private setupLightMergePass(target: Framebuffer, ambient: Texture, directional: Texture, color: Texture) {
+    private setupLightMergePass(
+        target: Framebuffer,
+        ambient: Texture, directional: Texture, point: Texture,
+        color: Texture
+    ) {
         const pass = new LightMergePass(this._gl, 'Light Merge');
         pass.initialize();
         pass.target = target;
 
         pass.ambient = ambient;
         pass.directional = directional;
+        pass.point = point;
         pass.color = color;
 
         this._passes.push(pass);
