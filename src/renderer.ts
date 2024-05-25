@@ -13,7 +13,7 @@ import { Dirty } from './util/dirty';
 import { drawBuffers } from './util/gl/drawBuffers';
 import { DirectionalLightPass } from './passes/light/directionalLightPass';
 import { BaseLightPass, FragmentLocation as LightLocations } from './passes/light/baseLightPass';
-import { Scene } from './scene';
+import { Scene, SceneChange } from './scene';
 import { halton2d } from './util/halton';
 import { AccumulatePass } from './passes/accumulatePass';
 import { isJitterPass } from './passes/jitterPass';
@@ -46,6 +46,8 @@ export class Renderer {
     protected _dirty = new Dirty(TrackedMembers);
     protected _camera: Camera;
     protected _lastFrame = 0;
+    protected _scene: Scene;
+    protected _updateScene = true;
 
     protected _framebuffers: Framebuffer[] = [];
     protected _accumulateBuffer: Framebuffer;
@@ -250,8 +252,15 @@ export class Renderer {
         return tex;
     }
 
-    public prepare(): boolean {
+    public prepare(time: number): boolean {
         let shouldRun = this._dirty.any();
+
+        let sceneChange = SceneChange.None;
+        if(this._updateScene) {
+            sceneChange = this._scene.update(time);
+            if(sceneChange !== SceneChange.None) shouldRun = true;
+            this._applyScene(sceneChange);
+        }
 
         if (this._dirty.get('Size')) {
             this._gl.viewport(0, 0, this._size[0], this._size[1]);
@@ -274,7 +283,7 @@ export class Renderer {
                     this._taaNumFrames);
             }
 
-            if(taaSettingsChanged || cameraChanged)
+            if(taaSettingsChanged || cameraChanged || sceneChange !== SceneChange.None)
             {
                 this._taaFrame = 0;
                 this._dirty.set('TaaFrame');
@@ -363,14 +372,31 @@ export class Renderer {
     }
 
     public set scene(v: Scene) {
-        if (v.geometry) {
+        this._scene = v;
+        this._applyScene(SceneChange.Full);
+    }
+
+    public set updateScene(v: boolean) {
+        this._updateScene = v;
+    }
+
+    protected _applyScene(sceneChange: number) {
+        if(sceneChange & SceneChange.Geometry) {
             this._geometryPass.clear();
-            v.geometry.forEach((g) => this._geometryPass.addGeometry(g));
+            this._scene.geometry?.forEach((g) => this._geometryPass.addGeometry(g));
         }
 
-        this._ambientLightPass.data = v.light.ambient ?? [];
-        this._directionalLightPass.data = v.light.directional ?? [];
-        this._pointLightPass.data = v.light.point ?? [];
+        if(sceneChange & SceneChange.Ambient) {
+            this._ambientLightPass.data = this._scene.light.ambient ?? [];
+        }
+
+        if(sceneChange & SceneChange.Directional) {
+            this._directionalLightPass.data = this._scene.light.directional ?? [];
+        }
+
+        if(sceneChange & SceneChange.Point) {
+            this._pointLightPass.data = this._scene.light.point ?? [];
+        }
     }
 
     public addGeometry(geometry: Geometry) {

@@ -41,6 +41,12 @@ class App {
         const element = document.getElementById(uiId) as HTMLCanvasElement;
         this._ui = new UI(element, true);
 
+        this._ui.input.checkbox({
+            label: 'update scene',
+            value: true,
+            handler: (v) => this._renderer.updateScene = v
+        })
+
         this._ui.input.number({
             label: 'resolution scale (1 / 2^x)',
             value: 0,
@@ -125,7 +131,7 @@ class App {
     }
 
     protected draw(time: number) {
-        const shouldDraw = this._renderer.prepare();
+        const shouldDraw = this._renderer.prepare(time);
         if (shouldDraw) this._renderer.draw(time);
         this._isDrawingOutput.value = shouldDraw ? 'true' : 'false';
         this._taaFrameOutput.value = this._renderer.taaFrame / this._taaFramesInput.value;
