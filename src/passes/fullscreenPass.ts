@@ -1,7 +1,7 @@
-import { Framebuffer } from '../../framebuffers/framebuffer';
-import { GL } from '../../util/gl/gl';
-import { replaceDefines } from '../../util/defines';
-import { ShaderRenderPass } from '../shaderRenderPass';
+import { Framebuffer } from '../framebuffers/framebuffer';
+import { GL } from '../util/gl/gl';
+import { replaceDefines } from '../util/defines';
+import { ShaderRenderPass } from './shaderRenderPass';
 
 const tracked = {
     Target: true,
@@ -26,7 +26,7 @@ export class FullscreenPass<T extends Tracked = Tracked> extends ShaderRenderPas
 
     public initialize(options?: Options) {
         this.setupProgram();
-        this.compileVert(require('./fullscreen.vert') as string);
+        this.compileVert(require('shaders/fullscreen.vert') as string);
         this.compileFrag(options?.fragSrc);
         this.linkProgram();
 
@@ -43,7 +43,7 @@ export class FullscreenPass<T extends Tracked = Tracked> extends ShaderRenderPas
     }
 
     protected compileFrag(src?: string) {
-        if(!src) src = require('./fullscreen.frag') as string;
+        if(!src) src = require('shaders/fullscreen.frag') as string;
         src = replaceDefines(src, [
             { key: 'COLOR_LOCATION', value: FragmentLocation.Color }
         ]);

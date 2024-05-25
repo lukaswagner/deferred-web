@@ -1,14 +1,14 @@
-import { ColorMode, Geometry } from '../../geometry/geometry';
-import { CameraPass } from '../cameraPass';
-import { RenderPass } from '../renderPass';
-import { Uniforms } from '../../util/uniforms';
+import { ColorMode, Geometry } from '../geometry/geometry';
+import { CameraPass } from './cameraPass';
+import { RenderPass } from './renderPass';
+import { Uniforms } from '../util/uniforms';
 import { mat4, vec2 } from 'gl-matrix';
-import { Framebuffer } from '../../framebuffers/framebuffer';
-import { drawBuffers } from '../../util/gl/drawBuffers';
-import { GL } from '../../util/gl/gl';
-import { JitterPass } from '../jitterPass';
-import { replaceDefines } from '../../util/defines';
-import { ShaderRenderPass } from '../shaderRenderPass';
+import { Framebuffer } from '../framebuffers/framebuffer';
+import { drawBuffers } from '../util/gl/drawBuffers';
+import { GL } from '../util/gl/gl';
+import { JitterPass } from './jitterPass';
+import { replaceDefines } from '../util/defines';
+import { ShaderRenderPass } from './shaderRenderPass';
 
 const tracked = {
     Target: true,
@@ -43,9 +43,9 @@ export class GeometryPass extends ShaderRenderPass<typeof tracked> implements Ca
 
     public initialize() {
         this.setupProgram();
-        this.compileVert(require('./geometry.vert') as string);
+        this.compileVert(require('shaders/geometry.vert') as string);
 
-        let fragSrc = require('./geometry.frag') as string;
+        let fragSrc = require('shaders/geometry.frag') as string;
         fragSrc = replaceDefines(fragSrc, [
             { key: 'WORLD_POSITION_LOCATION', value: FragmentLocation.WorldPosition },
             { key: 'WORLD_NORMAL_LOCATION', value: FragmentLocation.WorldNormal },

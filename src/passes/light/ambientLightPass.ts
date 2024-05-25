@@ -1,5 +1,5 @@
 import { vec4 } from 'gl-matrix';
-import { BaseLightPass } from '../base';
+import { BaseLightPass } from './baseLightPass';
 
 type Data = {
     /** rgb and intensity */
@@ -8,7 +8,7 @@ type Data = {
 
 export class AmbientLightPass extends BaseLightPass {
     public initialize(): boolean {
-        this._origFragSrc = require('./ambientLight.frag') as string;
+        this._origFragSrc = require('shaders/light/ambientLight.frag') as string;
         this._dataEntries = ['data.color'];
         return super.initialize();
     }

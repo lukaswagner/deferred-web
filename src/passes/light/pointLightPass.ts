@@ -1,13 +1,13 @@
 import { mat4, vec2, vec4 } from 'gl-matrix';
-import { Texture } from '../../../util/gl/texture';
-import { UniformBlock } from '../../../util/uniformBlock';
-import { replaceDefines } from '../../../util/defines';
-import { Framebuffer } from '../../../framebuffers/framebuffer';
-import { GL } from '../../../util/gl/gl';
-import { ShaderRenderPass } from '../../shaderRenderPass';
-import { CameraPass } from '../../cameraPass';
-import { JitterPass } from '../../jitterPass';
-import { BufferInfo } from '../../../geometry/bufferInfo';
+import { Texture } from '../../util/gl/texture';
+import { UniformBlock } from '../../util/uniformBlock';
+import { replaceDefines } from '../../util/defines';
+import { Framebuffer } from '../../framebuffers/framebuffer';
+import { GL } from '../../util/gl/gl';
+import { ShaderRenderPass } from '../shaderRenderPass';
+import { CameraPass } from '../cameraPass';
+import { JitterPass } from '../jitterPass';
+import { BufferInfo } from '../../geometry/bufferInfo';
 
 type Data = {
     /** position and radius */
@@ -60,10 +60,10 @@ export class PointLightPass extends ShaderRenderPass<typeof tracked> implements 
     }
 
     public initialize(): boolean {
-        this._origFragSrc = require('./point.frag') as string;
+        this._origFragSrc = require('shaders/light/pointLight.frag') as string;
 
         this.setupProgram();
-        this.compileVert(require('./point.vert') as string);
+        this.compileVert(require('shaders/light/pointLight.vert') as string);
         this.compileFrag(this.getSrc());
         this.linkProgram();
 

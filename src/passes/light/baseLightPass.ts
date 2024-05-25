@@ -1,8 +1,8 @@
-import { FullscreenPass } from '../../fullscreen';
-import { UniformBlock } from '../../../util/uniformBlock';
-import { Texture } from '../../../util/gl/texture';
-import { GL } from '../../../util/gl/gl';
-import { replaceDefines } from '../../../util/defines';
+import { FullscreenPass } from '../fullscreenPass';
+import { UniformBlock } from '../../util/uniformBlock';
+import { Texture } from '../../util/gl/texture';
+import { GL } from '../../util/gl/gl';
+import { replaceDefines } from '../../util/defines';
 
 const tracked = {
     Data: false,

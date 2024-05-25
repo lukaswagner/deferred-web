@@ -4,22 +4,22 @@ import { isCameraPass } from './passes/cameraPass';
 import { Framebuffer } from './framebuffers/framebuffer';
 import { Texture } from './util/gl/texture';
 import { Formats, TextureFormat } from './util/gl/formats';
-import { GeometryPass, FragmentLocation as GeomLocations } from './passes/geometry';
+import { GeometryPass, FragmentLocation as GeomLocations } from './passes/geometryPass';
 import { CanvasFramebuffer } from './framebuffers/canvasFramebuffer';
 import { BlitPass } from './passes/blitPass';
 import { mat4, vec2 } from 'gl-matrix';
 import { Geometry } from './geometry/geometry';
 import { Dirty } from './util/dirty';
 import { drawBuffers } from './util/gl/drawBuffers';
-import { DirectionalLightPass } from './passes/light/directional';
-import { BaseLightPass, FragmentLocation as LightLocations } from './passes/light/base';
+import { DirectionalLightPass } from './passes/light/directionalLightPass';
+import { BaseLightPass, FragmentLocation as LightLocations } from './passes/light/baseLightPass';
 import { Scene } from './scene';
 import { halton2d } from './util/halton';
-import { AccumulatePass } from './passes/taa';
+import { AccumulatePass } from './passes/accumulatePass';
 import { isJitterPass } from './passes/jitterPass';
-import { AmbientLightPass } from './passes/light/ambient';
-import { LightMergePass } from './passes/light/merge';
-import { PointLightPass } from './passes/light/point';
+import { AmbientLightPass } from './passes/light/ambientLightPass';
+import { LightMergePass } from './passes/light/lightMergePass';
+import { PointLightPass } from './passes/light/pointLightPass';
 
 const TrackedMembers = {
     Size: true,

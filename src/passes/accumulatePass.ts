@@ -1,6 +1,6 @@
-import { GL } from "../../util/gl/gl";
-import { Texture } from "../../util/gl/texture";
-import { FullscreenPass } from "../fullscreen";
+import { GL } from "../util/gl/gl";
+import { Texture } from "../util/gl/texture";
+import { FullscreenPass } from "./fullscreenPass";
 
 const tracked = {
     Target: false,
@@ -17,7 +17,7 @@ export class AccumulatePass extends FullscreenPass<typeof tracked> {
     }
 
     public initialize(): boolean {
-        const fragSrc = require('./blend.frag') as string;
+        const fragSrc = require('shaders/accumulate.frag') as string;
         const valid = super.initialize({ fragSrc });
 
         this._gl.useProgram(this._program);

@@ -1,8 +1,8 @@
 import { vec3 } from 'gl-matrix';
-import { FullscreenPass } from '../../fullscreen';
-import { UniformBlock } from '../../../util/uniformBlock';
-import { Texture } from '../../../util/gl/texture';
-import { GL } from '../../../util/gl/gl';
+import { FullscreenPass } from '../fullscreenPass';
+import { UniformBlock } from '../../util/uniformBlock';
+import { Texture } from '../../util/gl/texture';
+import { GL } from '../../util/gl/gl';
 
 const tracked = {
     Target: false,
@@ -25,7 +25,7 @@ export class LightMergePass extends FullscreenPass<typeof tracked> {
     }
 
     public initialize(): boolean {
-        const fragSrc = require('./merge.frag') as string;
+        const fragSrc = require('shaders/light/lightMerge.frag') as string;
         const valid = super.initialize({ fragSrc });
 
         this._gl.useProgram(this._program);

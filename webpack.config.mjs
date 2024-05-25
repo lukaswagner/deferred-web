@@ -22,7 +22,12 @@ export default function () {
         plugins: [
             new PugPlugin(),
         ],
-        resolve: { extensions: ['.ts', '...'] },
+        resolve: {
+            extensions: ['.ts', '...'],
+            alias: {
+                shaders: resolve(baseDir, 'src/shaders/'),
+            }
+        },
         module: {
             rules: [
                 {

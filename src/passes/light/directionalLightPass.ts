@@ -1,5 +1,5 @@
 import { vec3, vec4 } from 'gl-matrix';
-import { BaseLightPass } from '../base';
+import { BaseLightPass } from './baseLightPass';
 
 type Data = {
     /** direction */
@@ -10,7 +10,7 @@ type Data = {
 
 export class DirectionalLightPass extends BaseLightPass {
     public initialize(): boolean {
-        this._origFragSrc = require('./directionalLight.frag') as string;
+        this._origFragSrc = require('shaders/light/directionalLight.frag') as string;
         this._dataEntries = ['data.dir', 'data.color'];
         return super.initialize();
     }
