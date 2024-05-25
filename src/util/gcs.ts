@@ -19,3 +19,9 @@ export function gcsToCartesian(longitude: number, latitude: number) {
 
     return vec3.fromValues(sinLon * cosLat, sinLat, cosLon * cosLat);
 }
+
+export function cartesianToGcs(pos: vec3) {
+    const longitude = Math.atan(pos[0] / pos[2]);
+    const latitude = Math.asin(pos[1] / vec3.length(pos));
+    return { longitude, latitude };
+}

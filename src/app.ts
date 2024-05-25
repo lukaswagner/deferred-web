@@ -21,6 +21,7 @@ class App {
         if (!gl) throw new Error('Could not acquire WebGL context');
 
         this._camera = new Camera();
+        this._camera.eye = [1, 1, 2];
         new Navigation(this._canvas, this._camera);
 
         this._renderer = new Renderer(gl);
