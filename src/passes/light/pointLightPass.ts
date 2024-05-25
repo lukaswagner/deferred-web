@@ -133,6 +133,7 @@ export class PointLightPass extends ShaderRenderPass<typeof tracked> implements 
 
     protected _draw(): void {
         if(!this._vao) this._setupRenderData();
+        if(this._dataSize === 0) return;
         this._gl.bindVertexArray(this._vao);
         this._gl.drawArraysInstanced(this._gl.TRIANGLE_STRIP, 0, 4, this._dataSize);
         this._gl.bindVertexArray(undefined);
@@ -148,46 +149,39 @@ export class PointLightPass extends ShaderRenderPass<typeof tracked> implements 
         this._gl.bufferData(this._gl.ARRAY_BUFFER, basePositionData.buffer, this._gl.STATIC_DRAW);
 
         this._buffer = this._gl.createBuffer();
-        this._gl.bindBuffer(this._gl.ARRAY_BUFFER, this._buffer);
-        const data = new Float32Array([
-            0, 0.2, 0, 0.5, 1, 1, 1, 5,
-            1, 0, 0, 0.5, 1, 0, 0, 5,
-            0, 1.5, 0, 0.5, 0, 1, 0, 5,
-            0, 0, 1, 0.5, 0, 0, 1, 5,
-        ]);
-        this._gl.bufferData(this._gl.ARRAY_BUFFER, data.buffer, this._gl.STATIC_DRAW);
-        this._dataSize = 4;
+        this._dataSize = 0;
 
-        const buffers: BufferInfo[] = [{
-            buffer: basePosition,
-            location: VertexLocations.basePosition,
-            size: 2,
-            type: this._gl.FLOAT,
-            divisor: 0,
-        },
-        {
-            buffer: this._buffer,
-            location: VertexLocations.instancePosition,
-            size: 4,
-            type: this._gl.FLOAT,
-            divisor: 1,
-            stride: 8 * 4,
-        }, {
-            buffer: this._buffer,
-            location: VertexLocations.instanceColor,
-            size: 4,
-            type:  this._gl.FLOAT,
-            divisor: 1,
-            stride: 8 * 4,
-            offset: 4 * 4,
-        }
-    ];
+        const buffers: BufferInfo[] = [
+            {
+                buffer: basePosition,
+                location: VertexLocations.basePosition,
+                size: 2,
+                type: this._gl.FLOAT,
+                divisor: 0,
+            },
+            {
+                buffer: this._buffer,
+                location: VertexLocations.instancePosition,
+                size: 4,
+                type: this._gl.FLOAT,
+                divisor: 1,
+                stride: 8 * 4,
+            }, {
+                buffer: this._buffer,
+                location: VertexLocations.instanceColor,
+                size: 4,
+                type:  this._gl.FLOAT,
+                divisor: 1,
+                stride: 8 * 4,
+                offset: 4 * 4,
+            }
+        ];
 
         buffers.forEach((b) => {
             this._gl.bindBuffer(this._gl.ARRAY_BUFFER, b.buffer);
             this._gl.vertexAttribPointer(b.location, b.size, b.type, false, b.stride, b.offset);
             this._gl.enableVertexAttribArray(b.location);
-            this._gl.vertexAttribDivisor(b.location, b.divisor)
+            this._gl.vertexAttribDivisor(b.location, b.divisor);
             this._gl.bindBuffer(this._gl.ARRAY_BUFFER, null);
         });
 
@@ -240,25 +234,22 @@ export class PointLightPass extends ShaderRenderPass<typeof tracked> implements 
     }
 
     public set data(v: Data) {
+        if(!this._vao) this._setupRenderData();
+
         if(this._dataSize !== v.length) {
             this._dataSize = v.length;
             this.compile();
         }
 
-        // const pos = new Float32Array(
-        //     this._data.data, this._data.offsets[0], this._data.offsets[1] / 4);
-        // const color = new Float32Array(
-        //     this._data.data, this._data.offsets[1]);
+        const data = new Float32Array(v.length * 8);
+        v.forEach((l, i) => {
+            data.set(l.pos, i * 8 + 0);
+            data.set(l.color, i * 8 + 4);
+        });
 
-        // if (v.length * 4 !== pos.length || v.length * 4 !== color.length) {
-        //     console.warn('Invalid data length');
-        //     return;
-        // }
-
-        // v.forEach((l, i) => {
-        //     pos.set(l.pos, i * 4);
-        //     color.set(l.color, i * 4);
-        // });
+        this._gl.bindBuffer(this._gl.ARRAY_BUFFER, this._buffer);
+        this._gl.bufferData(this._gl.ARRAY_BUFFER, data.buffer, this._gl.STATIC_DRAW);
+        this._gl.bindBuffer(this._gl.ARRAY_BUFFER, null);
 
         this._dirty.set('Data');
     }

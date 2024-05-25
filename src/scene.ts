@@ -13,7 +13,11 @@ export type Scene = {
         directional?: {
             dir: vec3,
             color: vec4,
-        }[]
+        }[],
+        point?: {
+            pos: vec4,
+            color: vec4,
+        }[],
     }
 }
 
@@ -36,6 +40,7 @@ export function createDebugScene(gl: WebGL2RenderingContext): Scene {
         model: sphereMat,
     };
 
+    const pointOffset = 0.45;
     return {
         geometry: [cubes, sphere],
         light: {
@@ -45,6 +50,16 @@ export function createDebugScene(gl: WebGL2RenderingContext): Scene {
             directional: [
                 { dir: [-2, -5, -1], color: [0.3, 1, 1, 0.5] },
                 { dir: [3, -2, -3], color: [1, 0, 1, 0.5] },
+            ],
+            point: [
+                { pos: [pointOffset, 0, 0, 0.5], color: [1, 1, 1, 1] },
+                { pos: [pointOffset, 0, pointOffset, 0.5], color: [1, 1, 1, 1] },
+                { pos: [0, 0, pointOffset, 0.5], color: [1, 1, 1, 1] },
+                { pos: [-pointOffset, 0, pointOffset, 0.5], color: [1, 1, 1, 1] },
+                { pos: [-pointOffset, 0, 0, 0.5], color: [1, 1, 1, 1] },
+                { pos: [-pointOffset, 0, -pointOffset, 0.5], color: [1, 1, 1, 1] },
+                { pos: [0, 0, -pointOffset, 0.5], color: [1, 1, 1, 1] },
+                { pos: [pointOffset, 0, -pointOffset, 0.5], color: [1, 1, 1, 1] },
             ]
         }
     };

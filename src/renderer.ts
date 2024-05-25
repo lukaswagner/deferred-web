@@ -370,6 +370,7 @@ export class Renderer {
 
         this._ambientLightPass.data = v.light.ambient ?? [];
         this._directionalLightPass.data = v.light.directional ?? [];
+        this._pointLightPass.data = v.light.point ?? [];
     }
 
     public addGeometry(geometry: Geometry) {
