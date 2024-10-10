@@ -1,8 +1,4 @@
-import { vec3 } from 'gl-matrix';
-import { FullscreenPass } from '../fullscreenPass';
-import { UniformBlock } from '../../util/uniformBlock';
-import { Texture } from '../../util/gl/texture';
-import { GL } from '../../util/gl/gl';
+import { Texture2D, GL, FullscreenPass } from '@lukaswagner/webgl-toolkit';
 
 const tracked = {
     Target: false,
@@ -17,10 +13,10 @@ export enum FragmentLocation {
 }
 
 export class LightMergePass extends FullscreenPass<typeof tracked> {
-    protected _ambientTex: Texture;
-    protected _directionalTex: Texture;
-    protected _pointTex: Texture;
-    protected _colorTex: Texture;
+    protected _ambientTex: Texture2D;
+    protected _directionalTex: Texture2D;
+    protected _pointTex: Texture2D;
+    protected _colorTex: Texture2D;
 
     public constructor(gl: GL, name?: string) {
         super(gl, tracked, name);
@@ -61,25 +57,25 @@ export class LightMergePass extends FullscreenPass<typeof tracked> {
         super._tearDown();
     }
 
-    public set ambient(v: Texture)
+    public set ambient(v: Texture2D)
     {
         this._ambientTex = v;
         this._dirty.set('Ambient');
     }
 
-    public set directional(v: Texture)
+    public set directional(v: Texture2D)
     {
         this._directionalTex = v;
         this._dirty.set('Directional');
     }
 
-    public set point(v: Texture)
+    public set point(v: Texture2D)
     {
         this._pointTex = v;
         this._dirty.set('Point');
     }
 
-    public set color(v: Texture)
+    public set color(v: Texture2D)
     {
         this._colorTex = v;
         this._dirty.set('Color');

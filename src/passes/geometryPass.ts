@@ -1,14 +1,6 @@
+import { ShaderRenderPass, CameraPass, JitterPass, Framebuffer, GL, replaceDefines } from '@lukaswagner/webgl-toolkit';
 import { ColorMode, Geometry } from '../geometry/geometry';
-import { CameraPass } from './cameraPass';
-import { RenderPass } from './renderPass';
-import { Uniforms } from '../util/uniforms';
 import { mat4, vec2 } from 'gl-matrix';
-import { Framebuffer } from '../framebuffers/framebuffer';
-import { drawBuffers } from '../util/gl/drawBuffers';
-import { GL } from '../util/gl/gl';
-import { JitterPass } from './jitterPass';
-import { replaceDefines } from '../util/defines';
-import { ShaderRenderPass } from './shaderRenderPass';
 
 const tracked = {
     Target: true,

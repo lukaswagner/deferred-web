@@ -1,8 +1,4 @@
-import { FullscreenPass } from '../fullscreenPass';
-import { UniformBlock } from '../../util/uniformBlock';
-import { Texture } from '../../util/gl/texture';
-import { GL } from '../../util/gl/gl';
-import { replaceDefines } from '../../util/defines';
+import { Texture2D, UniformBlock, GL, replaceDefines, FullscreenPass } from '@lukaswagner/webgl-toolkit';
 
 const tracked = {
     Data: false,
@@ -19,8 +15,8 @@ export class BaseLightPass extends FullscreenPass<typeof tracked> {
     protected _origFragSrc: string;
     protected _dataEntries: string[];
 
-    protected _positionTex: Texture;
-    protected _normalTex: Texture;
+    protected _positionTex: Texture2D;
+    protected _normalTex: Texture2D;
 
     protected _data: UniformBlock;
     protected _size = 0;
@@ -84,13 +80,13 @@ export class BaseLightPass extends FullscreenPass<typeof tracked> {
         super._tearDown();
     }
 
-    public set position(v: Texture)
+    public set position(v: Texture2D)
     {
         this._positionTex = v;
         this._dirty.set('Postion');
     }
 
-    public set normal(v: Texture)
+    public set normal(v: Texture2D)
     {
         this._normalTex = v;
         this._dirty.set('Normal');

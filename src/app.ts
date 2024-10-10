@@ -1,8 +1,7 @@
-import { Camera } from './util/camera';
 import { Renderer } from './renderer';
-import { Navigation } from './util/navigation';
 import { NumberInput, ProgressOutput, TextOutput, UI } from '@lukaswagner/web-ui';
 import { createDebugScene } from './scene';
+import { Camera, Turntable } from '@lukaswagner/webgl-toolkit';
 
 class App {
     protected _canvas: HTMLCanvasElement;
@@ -22,7 +21,7 @@ class App {
 
         this._camera = new Camera();
         this._camera.eye = [1, 1, 2];
-        new Navigation(this._canvas, this._camera);
+        new Turntable(this._canvas, this._camera);
 
         this._renderer = new Renderer(gl);
         this._renderer.camera = this._camera;

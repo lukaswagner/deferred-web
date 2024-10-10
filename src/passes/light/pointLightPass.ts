@@ -1,13 +1,6 @@
 import { mat4, vec2, vec4 } from 'gl-matrix';
-import { Texture } from '../../util/gl/texture';
-import { UniformBlock } from '../../util/uniformBlock';
-import { replaceDefines } from '../../util/defines';
-import { Framebuffer } from '../../framebuffers/framebuffer';
-import { GL } from '../../util/gl/gl';
-import { ShaderRenderPass } from '../shaderRenderPass';
-import { CameraPass } from '../cameraPass';
-import { JitterPass } from '../jitterPass';
 import { BufferInfo } from '../../geometry/bufferInfo';
+import { ShaderRenderPass, CameraPass, JitterPass, Framebuffer, GL, replaceDefines, Texture2D } from '@lukaswagner/webgl-toolkit';
 
 type Data = {
     /** position and radius */
@@ -49,8 +42,8 @@ export class PointLightPass extends ShaderRenderPass<typeof tracked> implements 
     protected _ndcOffset = vec2.create();
     protected _renderSize = vec2.create();
 
-    protected _positionTex: Texture;
-    protected _normalTex: Texture;
+    protected _positionTex: Texture2D;
+    protected _normalTex: Texture2D;
 
     protected _buffer: WebGLBuffer;
     protected _dataSize = 1;
@@ -221,13 +214,13 @@ export class PointLightPass extends ShaderRenderPass<typeof tracked> implements 
         this._dirty.set('NdcOffset');
     }
 
-    public set position(v: Texture)
+    public set position(v: Texture2D)
     {
         this._positionTex = v;
         this._dirty.set('Postion');
     }
 
-    public set normal(v: Texture)
+    public set normal(v: Texture2D)
     {
         this._normalTex = v;
         this._dirty.set('Normal');

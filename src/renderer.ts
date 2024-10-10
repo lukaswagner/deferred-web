@@ -1,22 +1,10 @@
-import { Camera } from './util/camera';
-import { RenderPass } from './passes/renderPass';
-import { isCameraPass } from './passes/cameraPass';
-import { Framebuffer } from './framebuffers/framebuffer';
-import { Texture } from './util/gl/texture';
-import { Formats, TextureFormat } from './util/gl/formats';
+import { Camera, CanvasFramebuffer, Dirty, drawBuffers, TextureFormats, Framebuffer, halton2d, Texture2D, TextureFormat, AccumulatePass, BlitPass, isCameraPass, isJitterPass, RenderPass } from '@lukaswagner/webgl-toolkit';
 import { GeometryPass, FragmentLocation as GeomLocations } from './passes/geometryPass';
-import { CanvasFramebuffer } from './framebuffers/canvasFramebuffer';
-import { BlitPass } from './passes/blitPass';
 import { mat4, vec2 } from 'gl-matrix';
 import { Geometry } from './geometry/geometry';
-import { Dirty } from './util/dirty';
-import { drawBuffers } from './util/gl/drawBuffers';
 import { DirectionalLightPass } from './passes/light/directionalLightPass';
 import { BaseLightPass, FragmentLocation as LightLocations } from './passes/light/baseLightPass';
 import { Scene, SceneChange } from './scene';
-import { halton2d } from './util/halton';
-import { AccumulatePass } from './passes/accumulatePass';
-import { isJitterPass } from './passes/jitterPass';
 import { AmbientLightPass } from './passes/light/ambientLightPass';
 import { LightMergePass } from './passes/light/lightMergePass';
 import { PointLightPass } from './passes/light/pointLightPass';
@@ -84,16 +72,16 @@ export class Renderer {
         const geom = this.setupGeometryBuffer();
         this.setupGeometryPass(geom.fbo);
 
-        const ambient = this.setupSingleChannelBuffer('Ambient Light', Formats.RGBA16F);
+        const ambient = this.setupSingleChannelBuffer('Ambient Light', TextureFormats.RGBA16F);
         this._ambientLightPass = new AmbientLightPass(this._gl, 'Ambient Light');
         this.setupLightPass(this._ambientLightPass, ambient.fbo);
 
-        const directional = this.setupSingleChannelBuffer('Directional Light', Formats.RGBA16F);
+        const directional = this.setupSingleChannelBuffer('Directional Light', TextureFormats.RGBA16F);
         this._directionalLightPass = new DirectionalLightPass(this._gl, 'Directional Light');
         this.setupLightPass(this._directionalLightPass, directional.fbo);
         this._directionalLightPass.normal = geom.normal;
 
-        const point = this.setupSingleChannelBuffer('Point Light', Formats.RGBA16F);
+        const point = this.setupSingleChannelBuffer('Point Light', TextureFormats.RGBA16F);
         this.setupPointLightPass(point.fbo, geom.position, geom.normal);
 
         const merge = this.setupSingleChannelBuffer('Light Merge');
@@ -118,15 +106,15 @@ export class Renderer {
         const fbo = new Framebuffer(this._gl, 'Forward');
         const c0 = this._gl.COLOR_ATTACHMENT0;
 
-        const color = this.createTex(Formats.RGBA);
+        const color = this.createTex(TextureFormats.RGBA);
         color.minFilter = this._gl.NEAREST;
         color.magFilter = this._gl.NEAREST;
 
-        const position = this.createTex(Formats.RGBA16F);
+        const position = this.createTex(TextureFormats.RGBA16F);
         position.minFilter = this._gl.NEAREST;
         position.magFilter = this._gl.NEAREST;
 
-        const normal = this.createTex(Formats.RGBA16F);
+        const normal = this.createTex(TextureFormats.RGBA16F);
         normal.minFilter = this._gl.NEAREST;
         normal.magFilter = this._gl.NEAREST;
 
@@ -134,9 +122,9 @@ export class Renderer {
             { slot: c0 + GeomLocations.Color, texture: color },
             { slot: c0 + GeomLocations.WorldPosition, texture: position },
             { slot: c0 + GeomLocations.WorldNormal, texture: normal },
-            { slot: c0 + GeomLocations.ViewPosition, texture: this.createTex(Formats.RGBA16F) },
-            { slot: c0 + GeomLocations.ViewNormal, texture: this.createTex(Formats.RGBA16F) },
-            { slot: this._gl.DEPTH_ATTACHMENT, texture: this.createTex(Formats.Depth) },
+            { slot: c0 + GeomLocations.ViewPosition, texture: this.createTex(TextureFormats.RGBA16F) },
+            { slot: c0 + GeomLocations.ViewNormal, texture: this.createTex(TextureFormats.RGBA16F) },
+            { slot: this._gl.DEPTH_ATTACHMENT, texture: this.createTex(TextureFormats.Depth) },
         ]);
         this._framebuffers.push(fbo);
         return { fbo, color, position, normal };
@@ -154,7 +142,7 @@ export class Renderer {
         this._geometryPass = pass;
     }
 
-    private setupSingleChannelBuffer(name: string, format = Formats.RGBA) {
+    private setupSingleChannelBuffer(name: string, format = TextureFormats.RGBA) {
         const fbo = new Framebuffer(this._gl, name);
         const texture = this.createTex(format);
         texture.minFilter = this._gl.NEAREST;
@@ -175,7 +163,7 @@ export class Renderer {
         this._passes.push(pass);
     }
 
-    private setupPointLightPass(target: Framebuffer, position: Texture, normal: Texture) {
+    private setupPointLightPass(target: Framebuffer, position: Texture2D, normal: Texture2D) {
         const pass = new PointLightPass(this._gl, 'Directional Light');
 
         pass.initialize();
@@ -200,8 +188,8 @@ export class Renderer {
 
     private setupLightMergePass(
         target: Framebuffer,
-        ambient: Texture, directional: Texture, point: Texture,
-        color: Texture
+        ambient: Texture2D, directional: Texture2D, point: Texture2D,
+        color: Texture2D
     ) {
         const pass = new LightMergePass(this._gl, 'Light Merge');
         pass.initialize();
@@ -215,7 +203,7 @@ export class Renderer {
         this._passes.push(pass);
     }
 
-    private setupAccumulatePass(target: Framebuffer, input: Texture) {
+    private setupAccumulatePass(target: Framebuffer, input: Texture2D) {
         const pass = new AccumulatePass(this._gl, 'TAA Accumulate');
         pass.initialize();
         pass.target = target;
@@ -247,7 +235,7 @@ export class Renderer {
     }
 
     protected createTex(format: TextureFormat) {
-        const tex = new Texture(this._gl);
+        const tex = new Texture2D(this._gl);
         tex.initialize(format);
         return tex;
     }
